@@ -56,7 +56,7 @@ Applied top to bottom. Every report also records the revision, how it was picked
 | 4 | Repro failed in a different way | `cannot reproduce` | low |
 | 5 | Blocked: install failed, timeout or no steps | `cannot reproduce` | low, basis `fallback` |
 
-A wrong minor detail never overrides rule 1, it only gets listed. Known limit: reports that are invalid because of misuse or an unsupported setup aren't detected and usually land in rule 3 or 4. Wrong-output reports can't be confirmed yet: matching text is easy for a script to fake, so only a failure inside the package counts, and they land in rule 4.
+A wrong minor detail never overrides rule 1, it only gets listed. Known limit: reports that are invalid because of misuse or an unsupported setup aren't detected and usually land in rule 3 or 4. Wrong-output reports are only confirmed (at medium) when the reporter's own code prints the quoted output and that text isn't written in the script, because matching text is otherwise easy to fake.
 
 The label is derived, the facts are stored. Every report keeps the raw facts (execution status, each premise state, what ran, what matched), and the label comes from this table. Rule 5's label is a policy, not a fact: `--blocked-label invalid` changes it without touching code.
 

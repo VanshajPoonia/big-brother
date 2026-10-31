@@ -7,6 +7,7 @@ text, and anything it couldn't have read there is dropped with a note saying why
 from __future__ import annotations
 
 import re
+import sys
 
 from bigbrother.extract.model import Model
 from bigbrother.extract.validate import symptom_is_quoted
@@ -14,6 +15,9 @@ from bigbrother.schema import Extraction, Issue, ModelCall
 
 # qwen3:4b runs with an 8k context. This leaves room for the prompt, the schema and the answer.
 MAX_ISSUE_CHARS = 12_000
+
+# 1.2, 1.2.3, v1.2.3rc1 or 1.2.3.post1. Not ranges like 4.x or 1.2.*.
+SINGLE_RELEASE = re.compile(r"^v?\d+(\.\d+)+((a|b|rc|\.post|\.dev)\d+)?$")
 
 SYSTEM_PROMPT = """You read one GitHub issue about a Python package and fill in a JSON form about it.
 
@@ -86,6 +90,13 @@ def check_against_issue(issue: Issue, extraction: Extraction) -> tuple[Extractio
 
     kept = []
     for premise in extraction.premises:
+        if premise.kind == "version" and not SINGLE_RELEASE.match(premise.value):
+            notes.append(f"dropped version {premise.value!r}, it's a range, not one release")
+            continue
+        top = premise.value.split(".")[0]
+        if premise.kind == "symbol" and top in sys.stdlib_module_names and top != extraction.package:
+            notes.append(f"dropped {premise.value!r}, it's from Python's standard library, not this package")
+            continue
         written = _symbol_written if premise.kind == "symbol" else _version_written
         if written(issue, premise.value):
             kept.append(premise)

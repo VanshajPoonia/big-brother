@@ -128,8 +128,9 @@ class Extraction(BaseModel):
     @field_validator("claimed_version")
     @classmethod
     def check_version(cls, value: str | None) -> str | None:
+        # Reporters write "latest" or "main". That's no version, not a broken answer.
         if value is not None and not VERSION.match(value):
-            raise ValueError(f"{value!r} isn't a version")
+            return None
         return value
 
 
