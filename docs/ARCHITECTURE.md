@@ -54,6 +54,7 @@ Applied top to bottom. Every report also records the revision, how it was picked
 | --- | --- | --- | --- |
 | 1 | Repro ran and hit the quoted symptom inside the package | `confirmed` | high |
 | 2 | A central premise is `absent` at a revision resolved from a tag or PyPI | `invalid` | high, medium on the date fallback |
+| 2 | Or the report's own traceback shows the reporter's file loaded in place of a real module, like a script named `select.py` | `invalid` | medium |
 | 3 | Repro ran cleanly and exercised what the report describes | `cannot reproduce` | medium, high with the reporter's own code |
 | 4 | Repro failed in a different way | `cannot reproduce` | low |
 | 5 | Blocked: install failed, timeout or no steps | `cannot reproduce` | low, basis `fallback` |

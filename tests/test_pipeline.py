@@ -169,3 +169,13 @@ def test_a_repair_importing_something_tinylib_lacks_is_cleaned_before_the_rerun(
     assert sandbox.scripts[1].code.startswith("from tinylib import parse_url\n")
     assert sandbox.scripts[1].origin == "reporter"
     assert any("took out tinylib.parse_url_v2" in n for n in report.notes)
+
+
+def test_a_report_showing_a_shadowed_module_is_invalid(load_issue, tinylib_repo):
+    body = ('```\nFile "/home/me/random.py", line 3, in <module>\n'
+            "AttributeError: partially initialized module 'random' has no attribute 'choice'\n```")
+    issue = load_issue("no_steps").model_copy(update={"body": body})
+    report = check(issue, tinylib_repo.path, qwen("no_steps"), reproduce=FakeSandbox(CRASHED), **LANES)
+
+    assert report.shadowing.module == "random"
+    assert (report.verdict.label, report.verdict.rule) == (Label.INVALID, 2)

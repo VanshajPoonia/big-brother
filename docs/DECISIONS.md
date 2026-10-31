@@ -68,3 +68,6 @@ On toolz #99 Qwen named the package `update_in`, a function. That broke the repa
 **1 Nov, 2:40 AM. A repair can't import what the package doesn't have.**
 On toolz #99 Qwen's repair imported `clojure_update_in`, a function the reporter only proposed, so the script died before reaching the real bug. Names a repair adds are now checked against the source at that revision and taken out if they're missing. Only the model's additions are touched. Eval went from 6 to 7 of 11.
 
+**1 Nov, 3:00 AM. Catch a reporter's file hiding a real module.**
+On tqdm #1477 the reporter's script was named `select.py`, so Python loaded it instead of the standard `select` module and tqdm looked broken. The report's own traceback shows both facts: a frame from the reporter's `select.py` outside any installed library, and `module 'select' has no attribute 'select'`. Both have to be there, so a hint alone (arrow #1154 says "partially initialized module 'arrow'" but shows no file) isn't enough. It needs no model. A real reproduction still wins. First real invalid caught: 8 of 11.
+

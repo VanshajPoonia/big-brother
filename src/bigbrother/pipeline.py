@@ -14,6 +14,7 @@ from bigbrother.extract import extract
 from bigbrother.extract.code import reporter_script
 from bigbrother.extract.model import Model, ModelError
 from bigbrother.extract.repair import broke_on_its_own, repair
+from bigbrother.shadowing import find_shadowing
 from bigbrother.schema import (
     CheckState,
     ExecutionStatus,
@@ -117,6 +118,9 @@ def check(
             notes.append(f"the package is {package!r} from the repo, not {extraction.package!r} as Qwen read it")
             extraction = extraction.model_copy(update={"package": package})
 
+    # 2c. Does the report's own traceback show the reporter's file hiding a real module?
+    shadowing = find_shadowing(issue.text, extraction.package)
+
     # 3. Do the functions and versions it relies on exist there?
     premises = []
     if revision is not None and extraction.premises:
@@ -164,7 +168,7 @@ def check(
                 notes.append(f"the sandbox failed: {error}")
 
     # 5. Fixed rules pick the label.
-    verdict = decide(extraction, premises, run, revision, repro=script, blocked_label=blocked_label)
+    verdict = decide(extraction, premises, run, revision, repro=script, shadowing=shadowing, blocked_label=blocked_label)
 
     return Report(
         tool_version=__version__,
@@ -177,5 +181,6 @@ def check(
         run=run,
         verdict=verdict,
         model_calls=calls,
+        shadowing=shadowing,
         notes=notes,
     )

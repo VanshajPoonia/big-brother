@@ -6,6 +6,8 @@ Rules are tried top to bottom and the first one that fits wins:
    For wrong output, the reporter's own code printing it counts too, at medium, as long as the
    text isn't written in the script itself.
 2. A central premise is absent: invalid, high (medium when the revision is a date guess).
+   Or the report's own traceback shows the reporter's file standing in for a real module,
+   like a script named select.py: invalid, medium.
 3. The repro ran cleanly against the checked-out package: cannot reproduce, medium
    (high when it was the reporter's own code).
 4. The repro failed some other way: cannot reproduce, low.
@@ -29,6 +31,7 @@ from bigbrother.schema import (
     Revision,
     RevisionSource,
     RunResult,
+    Shadowing,
     Verdict,
 )
 
@@ -96,6 +99,7 @@ def decide(
     revision: Revision | None,
     *,
     repro: ReproScript | None = None,
+    shadowing: Shadowing | None = None,
     blocked_label: Label = Label.CANNOT_REPRODUCE,
 ) -> Verdict:
     context = _revision_note(revision)
@@ -136,6 +140,15 @@ def decide(
             reasons.append("the revision is a guess from the issue date, so it may not be the version the reporter used")
         return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM if guessed else Confidence.HIGH,
                        basis=Basis.EVIDENCE, rule=2, reasons=reasons + _premise_notes(premises, set(absent)) + context)
+
+    # Rule 2, second case: the reporter's own file stood in for a real module.
+    if shadowing is not None:
+        reasons = [
+            f"the report's own traceback shows the reporter's file {shadowing.path} loaded in place of "
+            f"the module {shadowing.module!r} ({shadowing.quote}), so the error comes from the file name"
+        ]
+        return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=2,
+                       reasons=reasons + _premise_notes(premises, set()) + context)
 
     if blocked is None and run.exit_code == 0 and run.exception_type is None and not run.symptom_matched:
         # Rule 3.

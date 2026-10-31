@@ -195,6 +195,14 @@ class RunResult(BaseModel):
         return value[:OUTPUT_CAP]
 
 
+class Shadowing(BaseModel):
+    """The reporter's own file loaded in place of a real module, as their own traceback shows."""
+
+    module: str
+    path: str
+    quote: str = Field(max_length=300)
+
+
 class ModelCall(BaseModel):
     """One request to the model and its raw response, saved as evidence."""
 
@@ -238,4 +246,5 @@ class Report(BaseModel):
     run: RunResult | None = None
     verdict: Verdict
     model_calls: list[ModelCall] = Field(default_factory=list)
+    shadowing: Shadowing | None = None
     notes: list[str] = Field(default_factory=list)

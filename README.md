@@ -53,9 +53,9 @@ The maintainers fixed it in 4.4.0.
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end. The latest run is in [eval/runs/2026-11-01-v2/results.md](eval/runs/2026-11-01-v2/results.md):
 
-- 7 of 11 right, about a minute per issue.
+- 8 of 11 right, about a minute per issue.
 - All 4 real bugs confirmed, and every `confirmed` was a real bug. It never said `invalid` when it wasn't.
-- All 4 real `invalid` reports came back as `cannot reproduce`. They were misunderstandings, an old install and a script named `select.py`, not missing functions.
+- 1 of 4 real `invalid` reports caught: the reporter's script was named `select.py`, hiding Python's own `select` module, and their traceback shows it. The other 3 were misunderstandings and an old install.
 
 Each mistake is in the table with the reason the tool gave.
 
@@ -71,7 +71,7 @@ Each mistake is in the table with the reason the tool gave.
 
 - Python packages only.
 - Wrong-output bugs confirm at medium at most, and only from the reporter's own code.
-- `invalid` only means something the report relies on doesn't exist. Reports that are invalid because of a misunderstanding or an old install aren't caught.
+- `invalid` means something the report relies on doesn't exist, or the reporter's own file hid a real module. Reports that are invalid because of a misunderstanding or an old install aren't caught.
 - Pull requests aren't checked yet.
 
 ## Contributing

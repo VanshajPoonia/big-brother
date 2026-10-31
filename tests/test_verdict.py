@@ -14,6 +14,7 @@ from bigbrother.schema import (
     Revision,
     RevisionSource,
     RunResult,
+    Shadowing,
     Symptom,
 )
 from bigbrother.verdict import decide
@@ -194,3 +195,24 @@ def test_a_generated_script_printing_wrong_output_doesnt_confirm():
     generated = PRINTS_IT.model_copy(update={"origin": "model"})
     verdict = decide(WRONG_OUTPUT, [], ran(symptom_matched=True), TAG, repro=generated)
     assert verdict.rule == 4
+
+
+SHADOWED = Shadowing(module="select", path="/Users/me/scripts/select.py",
+                     quote="AttributeError: module 'select' has no attribute 'select'")
+
+
+def test_a_shadowed_module_is_invalid_at_medium():
+    run = ran(exit_code=1, exception_type="ModuleNotFoundError")
+    verdict = decide(EXTRACTION, [], run, TAG, shadowing=SHADOWED)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.INVALID, Confidence.MEDIUM, 2)
+    assert "/Users/me/scripts/select.py loaded in place of the module 'select'" in verdict.reasons[0]
+
+
+def test_a_real_reproduction_beats_shadowing():
+    verdict = decide(EXTRACTION, [], ran(**CRASHED_AS_REPORTED), TAG, shadowing=SHADOWED)
+    assert verdict.label == Label.CONFIRMED
+
+
+def test_shadowing_needs_no_run_at_all():
+    verdict = decide(EXTRACTION.model_copy(update={"has_steps": False}), [], None, TAG, shadowing=SHADOWED)
+    assert (verdict.label, verdict.basis) == (Label.INVALID, Basis.EVIDENCE)
