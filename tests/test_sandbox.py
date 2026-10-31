@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from bigbrother import sandbox
-from bigbrother.schema import OUTPUT_CAP, ExecutionStatus, ReproScript, Revision, Symptom
+from bigbrother.schema import OUTPUT_CAP, ExecutionStatus, ReproScript, Revision, RevisionSource, Symptom
 
 SRC = Path("/tmp/work/src")
 SCRIPT = Path("/tmp/work/repro.py")
@@ -54,7 +54,9 @@ def test_install_command_has_network_limits_and_only_src_and_deps():
         f"type=bind,source={SRC},target=/src",
         "type=volume,source=bb-1-deps,target=/deps",
     ]
-    assert "-e" not in command and "--env" not in command and "--env-file" not in command
+    # The only environment variable is a version for packages that read theirs from git.
+    assert flag_value(command, "-e") == ["SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0"]
+    assert "--env" not in command and "--env-file" not in command
     assert command[-3:-1] == ["sh", "-c"]
     assert "uv venv /deps/venv --python /usr/local/bin/python3" in command[-1]
     assert "uv pip install --python /deps/venv/bin/python -e /src" in command[-1]
@@ -342,3 +344,14 @@ def test_export_revision_copies_the_tree(tinylib_repo, tmp_path):
     assert "MAX_LENGTH" not in (dest / "tinylib" / "urls.py").read_text()
     assert not (dest / ".git").exists()
     assert commands[0].startswith("git -C")
+
+
+def test_a_release_tag_gives_the_build_its_version():
+    command = sandbox.install_command("bb-1-install", SRC, "bb-1-deps", MARKER, version="4.3.0")
+    assert flag_value(command, "-e") == ["SETUPTOOLS_SCM_PRETEND_VERSION=4.3.0"]
+
+
+@pytest.mark.parametrize("ref, version", [("v4.3.0", "4.3.0"), ("4.7.0", "4.7.0"), ("origin/main", None), (None, None), ("v1.2.3rc1", None)])
+def test_release_version_only_for_plain_tags(ref, version):
+    revision = Revision(sha="a" * 40, source=RevisionSource.TAG, ref=ref)
+    assert sandbox._release_version(revision) == version

@@ -68,15 +68,28 @@ def install_script(marker: str) -> str:
     )
 
 
-def install_command(name: str, src: Path, volume: str, marker: str, image: str = IMAGE) -> list[str]:
-    # Network on, no environment variables, only the exported source and the volume.
+def install_command(
+    name: str, src: Path, volume: str, marker: str, image: str = IMAGE, version: str | None = None
+) -> list[str]:
+    # Network on, only the exported source and the volume. The one environment variable is a
+    # version: packages that read theirs from git (setuptools-scm, hatch-vcs) fail without .git.
     return [
-        "docker", "run", "--name", name,
+        "docker", "run", "--name", name, "-e", f"SETUPTOOLS_SCM_PRETEND_VERSION={version or FALLBACK_VERSION}",
         "--cpus", "1", "--memory", "1g", "--pids-limit", "256",
         "--mount", f"type=bind,source={src},target=/src",
         "--mount", f"type=volume,source={volume},target=/deps",
         image, "sh", "-c", install_script(marker),
     ]  # fmt: skip
+
+
+FALLBACK_VERSION = "0.0.0"
+
+
+def _release_version(revision: Revision) -> str | None:
+    """The plain version for a tag like v4.3.0, or None when the revision isn't a release."""
+    if revision.ref and re.fullmatch(r"v?\d+(\.\d+){0,3}", revision.ref):
+        return revision.ref.removeprefix("v")
+    return None
 
 
 def run_command(
@@ -340,7 +353,7 @@ def _reproduce(
         raise SandboxError(f"docker volume create failed: {created.stderr.strip()}")
 
     try:
-        install_args = install_command(names["install"], src, names["volume"], marker, image)
+        install_args = install_command(names["install"], src, names["volume"], marker, image, _release_version(revision))
         install = _docker(install_args, commands, INSTALL_TIMEOUT)
     except subprocess.TimeoutExpired as timeout:
         _cleanup(["docker", "kill", names["install"]], commands)
