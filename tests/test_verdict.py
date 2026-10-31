@@ -8,12 +8,14 @@ from bigbrother.schema import (
     Excerpt,
     Extraction,
     Label,
+    OldInstall,
     Premise,
     PremiseResult,
     ReproScript,
     Revision,
     RevisionSource,
     RunResult,
+    Shadowing,
     Symptom,
 )
 from bigbrother.verdict import decide
@@ -117,9 +119,17 @@ def test_rule_3_reporters_own_code_running_cleanly_is_high():
     assert "reporter's own code ran cleanly" in verdict.reasons[0]
 
 
-def test_rule_3_generated_script_is_medium():
+def test_rule_3_a_script_qwen_wrote_running_cleanly_is_low():
     verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(), TAG, repro=GENERATED)
-    assert (verdict.confidence, verdict.rule) == (Confidence.MEDIUM, 3)
+    assert (verdict.confidence, verdict.rule) == (Confidence.LOW, 3)
+    assert "Qwen wrote" in verdict.reasons[0]
+
+
+def test_rule_1_with_a_script_qwen_wrote_is_medium():
+    crashed = ran(exit_code=1, exception_type="ValueError", symptom_matched=True, in_package=True)
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], crashed, TAG, repro=GENERATED)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.CONFIRMED, Confidence.MEDIUM, 1)
+    assert any("Qwen wrote the script" in r for r in verdict.reasons)
 
 
 def test_rule_3_is_medium_when_the_import_wasnt_checked():
@@ -194,3 +204,39 @@ def test_a_generated_script_printing_wrong_output_doesnt_confirm():
     generated = PRINTS_IT.model_copy(update={"origin": "model"})
     verdict = decide(WRONG_OUTPUT, [], ran(symptom_matched=True), TAG, repro=generated)
     assert verdict.rule == 4
+
+
+SHADOWED = Shadowing(module="select", path="/Users/me/scripts/select.py",
+                     quote="AttributeError: module 'select' has no attribute 'select'")
+
+
+def test_a_shadowed_module_is_invalid_at_medium():
+    run = ran(exit_code=1, exception_type="ModuleNotFoundError")
+    verdict = decide(EXTRACTION, [], run, TAG, shadowing=SHADOWED)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.INVALID, Confidence.MEDIUM, 2)
+    assert "/Users/me/scripts/select.py loaded in place of the module 'select'" in verdict.reasons[0]
+
+
+def test_a_real_reproduction_beats_shadowing():
+    verdict = decide(EXTRACTION, [], ran(**CRASHED_AS_REPORTED), TAG, shadowing=SHADOWED)
+    assert verdict.label == Label.CONFIRMED
+
+
+def test_shadowing_needs_no_run_at_all():
+    verdict = decide(EXTRACTION.model_copy(update={"has_steps": False}), [], None, TAG, shadowing=SHADOWED)
+    assert (verdict.label, verdict.basis) == (Label.INVALID, Basis.EVIDENCE)
+
+
+OLD = OldInstall(owner="Console", name="save_svg", path="rich/console.py", line=2479, text="def save_svg(",
+                 added_in="v12.1.0", released="2022-04-03T14:48:15+01:00")
+
+
+def test_an_old_install_is_invalid_at_medium():
+    verdict = decide(EXTRACTION.model_copy(update={"has_steps": False}), [], None, TAG, old_install=OLD)
+    assert (verdict.label, verdict.confidence, verdict.rule, verdict.basis) == (Label.INVALID, Confidence.MEDIUM, 2, Basis.EVIDENCE)
+    assert "defined at rich/console.py:2479" in verdict.reasons[0]
+    assert "first shipped in v12.1.0 on 03 Apr 2022" in verdict.reasons[0]
+
+
+def test_a_real_reproduction_beats_an_old_install():
+    assert decide(EXTRACTION, [], ran(**CRASHED_AS_REPORTED), TAG, old_install=OLD).label == Label.CONFIRMED

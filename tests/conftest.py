@@ -89,6 +89,12 @@ def build_tinylib(root: Path) -> FixtureRepo:
     return FixtureRepo(repo, tags)
 
 
+@pytest.fixture(autouse=True)
+def no_gh_login(monkeypatch):
+    """Tests never read the real `gh` login: no token of the person running them reaches a test."""
+    monkeypatch.setattr("bigbrother.ingest._gh_token", lambda: None)
+
+
 @pytest.fixture
 def tinylib_repo(tmp_path: Path) -> FixtureRepo:
     return build_tinylib(tmp_path)

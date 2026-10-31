@@ -7,7 +7,8 @@ from bigbrother import __version__, sandbox
 from bigbrother.cli import main
 from bigbrother.extract import model as model_module
 from bigbrother.extract.model import ReplayModel
-from bigbrother.schema import ExecutionStatus, ModelCall, Report, RunResult
+from bigbrother.ingest import load_issue_file
+from bigbrother.schema import Basis, Confidence, ExecutionStatus, Label, ModelCall, Report, RunResult, Verdict
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -62,3 +63,108 @@ def test_json_flag_prints_the_report(tmp_path, tinylib_repo, monkeypatch, capsys
     assert printed["verdict"]["label"] == "invalid"
     assert printed["verdict"]["basis"] == "fallback"
     assert printed["model_available"] is False
+
+
+def test_replay_uses_the_saved_answers_and_never_the_model(tmp_path, tinylib_repo, monkeypatch, capsys):
+    def no_model():
+        raise AssertionError("--replay must not ask for a model")
+
+    monkeypatch.setattr(model_module, "default_model", no_model)
+    crashed = RunResult(status=ExecutionStatus.RAN, exit_code=1, exception_type="ValueError", symptom_matched=True,
+                        in_package=True, imported_from_checkout=True)
+    monkeypatch.setattr(sandbox, "reproduce", lambda *args: crashed)
+    saved_call = ModelCall.model_validate_json((FIXTURES / "model" / "real_bug_extract.json").read_text())
+    earlier = tmp_path / "earlier.json"
+    issue = FIXTURES / "issues" / "real_bug.json"
+    verdict = Verdict(label=Label.CONFIRMED, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=1)
+    earlier.write_text(Report(tool_version="0", model_available=True, issue=load_issue_file(issue), verdict=verdict,
+                              model_calls=[saved_call]).model_dump_json())
+
+    code = main(["check", str(issue), "--repo", str(tinylib_repo.path), "--out", str(tmp_path / "out"), "--replay", str(earlier)])
+
+    assert code == 0
+    report = Report.model_validate_json((tmp_path / "out" / "report.json").read_text())
+    assert report.verdict.label == "confirmed"
+    assert report.model_calls == [saved_call]
+
+
+def test_replay_of_a_missing_file_is_bad_input(tmp_path, capsys):
+    issue = FIXTURES / "issues" / "real_bug.json"
+    assert main(["check", str(issue), "--repo", str(tmp_path), "--replay", str(tmp_path / "nope.json")]) == 2
+
+
+def test_doctor_names_a_layer_and_refuses_a_remote_model(monkeypatch, capsys):
+    monkeypatch.setenv("OLLAMA_HOST", "http://192.168.1.20:11434")
+    assert main(["doctor"]) == 0
+    out = capsys.readouterr().out
+    assert "must run on this machine" in out
+    assert "\nlayer " in out
+
+
+def test_doctor_says_when_ollama_isnt_answering(monkeypatch, capsys):
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:1")
+    main(["doctor"])
+    assert "Ollama isn't answering" in capsys.readouterr().out
+
+
+def test_eval_only_reruns_some_but_scores_all(tmp_path, monkeypatch, capsys):
+    from bigbrother import cli, ingest, pipeline
+
+    cases = tmp_path / "cases.yaml"
+    cases.write_text(
+        "- {id: a-1, issue_url: 'https://github.com/o/a/issues/1', repo: o/a, expected: confirmed, checked_by: t}\n"
+        "- {id: a-2, issue_url: 'https://github.com/o/a/issues/2', repo: o/a, expected: invalid, checked_by: t}\n"
+    )
+    out = tmp_path / "runs"
+    issue = load_issue_file(FIXTURES / "issues" / "real_bug.json")
+    saved = Report(tool_version="0", model_available=True, issue=issue,
+                   verdict=Verdict(label=Label.INVALID, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=2))
+    (out / "a-2").mkdir(parents=True)
+    (out / "a-2" / "report.json").write_text(saved.model_dump_json())
+
+    rerun = saved.model_copy(update={"verdict": saved.verdict.model_copy(update={"label": Label.CONFIRMED, "rule": 1})})
+    monkeypatch.setattr(model_module, "default_model", lambda: ReplayModel([]))
+    monkeypatch.setattr(ingest, "fetch_issue", lambda url: issue)
+    monkeypatch.setattr(ingest, "ensure_clone", lambda repo, cache: tmp_path)
+    monkeypatch.setattr(pipeline, "check", lambda *args, **kwargs: rerun)
+
+    assert main(["eval", str(cases), "--out", str(out), "--only", "a-1"]) == 0
+    results = (out / "results.md").read_text()
+    assert "**2/2 (100%)**" in results  # a-1 rerun, a-2 from its saved report
+    assert "Seconds per issue" not in results
+
+
+def test_init_writes_the_bot_workflow_once(tmp_path, capsys):
+    (tmp_path / ".git").mkdir()
+    assert main(["init", str(tmp_path)]) == 0
+    workflow = (tmp_path / ".github/workflows/bigbrother.yml").read_text()
+    assert "runs-on: [self-hosted, bigbrother]" in workflow and "pull_request_target" in workflow
+    assert "add it as a runner" in capsys.readouterr().out
+    assert main(["init", str(tmp_path)]) == 2  # never overwrites without --force
+    assert main(["init", str(tmp_path), "--force"]) == 0
+
+
+def test_pr_needs_a_url_or_a_base(capsys):
+    assert main(["pr"]) == 2
+    assert "--base" in capsys.readouterr().err
+
+
+def test_init_prints_runner_steps_for_this_repo_and_machine():
+    from bigbrother.cli import runner_steps
+
+    steps = runner_steps("someone/their-lib", "Darwin", "arm64")
+    assert "actions-runner-osx-arm64-$V.tar.gz" in steps
+    assert "--url https://github.com/someone/their-lib --labels bigbrother" in steps
+    assert "repos/someone/their-lib/actions/runners/registration-token" in steps
+    assert "actions-runner-linux-x64-" in runner_steps(None, "Linux", "x86_64")
+
+
+def test_issue_headlines_read_like_the_evidence():
+    from bigbrother.cli import headline
+
+    for folder, line in [("humanize-57", "✓ Reproduced on 4.3.0"), ("fake-rce-report", "✗ parse_url_v2() does not exist at v1.1.0"),
+                         ("tqdm-1477", "✗ The reporter's own select.py hid Python's select module"),
+                         ("rich-2465", "✗ save_svg exists since v12.1.0: the reporter's install is older"),
+                         ("arrow-1154", "! Not reproduced on 1.2.3")]:
+        report = Report.model_validate_json((Path("examples") / folder / "report.json").read_text())
+        assert headline(report) == line

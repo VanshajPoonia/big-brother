@@ -1,0 +1,115 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/4006",
+    "repo": "Textualize/rich",
+    "number": 4006,
+    "title": "fix for infinite loop in split_graphemes",
+    "base_sha": "27701029082052c6541031b6f139097230253900",
+    "head_sha": "905b397deb6b5ed59dfd80fa499c90e215f309c8"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_cells.py passes at the PR's head (67 passed in 0.08s), but couldn't run at the base: the tests timed out",
+    "`split_graphemes` (rich/cells.py:161) changed, and a test this PR adds or changes uses it at tests/test_cells.py:217",
+    "the PR changes 1 test file: tests/test_cells.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/cells.py",
+      "name": "split_graphemes",
+      "line": 161,
+      "changed_lines": 33,
+      "mentions": [
+        {
+          "path": "tests/test_cells.py",
+          "line": 217,
+          "text": "spans, cell_length = split_graphemes(text)",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_cells.py",
+          "line": 14,
+          "text": "split_graphemes,",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_cells.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_cells.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "...................................................................      [100%]\n67 passed in 0.08s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 905b397deb6b5ed59dfd80fa499c90e215f309c8",
+      "docker volume create bb-2de850a6f657-deps",
+      "docker run --name bb-2de850a6f657-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-blmrqpic/src,target=/src --mount type=volume,source=bb-2de850a6f657-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-57643c8e3c6545c5b060a035e6433d8a; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-2de850a6f657-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-blmrqpic/src,target=/src,readonly --mount type=volume,source=bb-2de850a6f657-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_cells.py",
+      "docker rm -f bb-2de850a6f657-install bb-2de850a6f657-tests",
+      "docker volume rm -f bb-2de850a6f657-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 4.77
+  },
+  "base_run": {
+    "status": "timeout",
+    "exit_code": null,
+    "stdout": "",
+    "stderr": "the tests ran longer than 180 seconds",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 27701029082052c6541031b6f139097230253900",
+      "docker volume create bb-144fb03bf3ff-deps",
+      "docker run --name bb-144fb03bf3ff-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-ixu388dm/src,target=/src --mount type=volume,source=bb-144fb03bf3ff-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-9be99a058c194fe6af22a0769a16d5c8; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-144fb03bf3ff-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-ixu388dm/src,target=/src,readonly --mount type=volume,source=bb-144fb03bf3ff-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_cells.py",
+      "docker kill bb-144fb03bf3ff-tests",
+      "docker rm -f bb-144fb03bf3ff-install bb-144fb03bf3ff-tests",
+      "docker volume rm -f bb-144fb03bf3ff-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 183.74
+  }
+}

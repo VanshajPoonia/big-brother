@@ -1,0 +1,22 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/422",
+    "repo": "python-humanize/humanize",
+    "number": 422,
+    "title": "Update dependency pymdown-extensions to v12",
+    "base_sha": "392aef707c0e74341ab4a51420984e9ea6b566c5",
+    "head_sha": "bea18cf414c9e802658fcf6b1351af4ad424fb8c"
+  },
+  "label": "no function changed",
+  "reasons": [
+    "no function in the package's code changed, only lines outside functions or no code at all",
+    "the PR changes 0 test files"
+  ],
+  "functions": [],
+  "tests_changed": [],
+  "outside_functions": [],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}

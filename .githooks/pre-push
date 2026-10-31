@@ -1,0 +1,12 @@
+#!/bin/sh
+# Runs what CI runs on each commit being pushed, so CI never sees a failure we could catch here.
+. "$(dirname "$0")/_python"
+zero=0000000000000000000000000000000000000000
+while read local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "$zero" ] && continue  # deleting a branch
+    case "$remote_ref" in
+        refs/heads/main) echo "pre-push: main only changes through pull requests"; exit 1 ;;
+    esac
+    "$PY" scripts/preflight.py --rev "$local_sha" || exit 1
+done
+exit 0

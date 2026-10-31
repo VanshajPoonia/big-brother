@@ -55,3 +55,52 @@ Reports store raw facts and derive the label, `--blocked-label` changes the bloc
 
 **31 Oct, 10:30 PM. The model only runs on this machine.**
 The organizers allow only offline models. The code refuses any model host that isn't localhost, ignores proxy settings and doesn't follow redirects, so a typo or a stray setting can't send issue text out. GitHub, git and pip still use the network. The repro run doesn't.
+
+**1 Nov, 2:00 AM. One repair round for broken reporter scripts.**
+Two of 11 real reporters forgot an import, so their code died with NameError before reaching the package. When a script fails with its own NameError or ImportError outside the package, Qwen fixes it once and it runs again. The fix is rejected if it raises, asserts, exits, catches exceptions or contains the reported text.
+
+**1 Nov, 2:20 AM. Tried and dropped: the model tagging feature requests.**
+All 4 real invalid reports in the eval were misunderstandings or feature requests, not missing functions. We had Qwen tag each report as a bug, question or feature request, with a rule turning a non-bug into invalid. On the 11 real cases Qwen called every report a bug, including a plain feature request, so the rule never fired. It only added model influence and a risk of false invalids, so it's gone. Invalid still means "something the report relies on doesn't exist".
+
+**1 Nov, 2:20 AM. The package name comes from the repo.**
+On toolz #99 Qwen named the package `update_in`, a function. That broke the repair and would have hidden a real crash, because "inside the package" is checked against that name. Now the importable packages are read from the checkout, and Qwen's name is only kept if the repo has it.
+
+**1 Nov, 2:40 AM. A repair can't import what the package doesn't have.**
+On toolz #99 Qwen's repair imported `clojure_update_in`, a function the reporter only proposed, so the script died before reaching the real bug. Names a repair adds are now checked against the source at that revision and taken out if they're missing. Only the model's additions are touched. Eval went from 6 to 7 of 11.
+
+**1 Nov, 3:00 AM. Catch a reporter's file hiding a real module.**
+On tqdm #1477 the reporter's script was named `select.py`, so Python loaded it instead of the standard `select` module and tqdm looked broken. The report's own traceback shows both facts: a frame from the reporter's `select.py` outside any installed library, and `module 'select' has no attribute 'select'`. Both have to be there, so a hint alone (arrow #1154 says "partially initialized module 'arrow'" but shows no file) isn't enough. It needs no model. A real reproduction still wins. First real invalid caught: 8 of 11.
+
+**1 Nov, 3:15 AM. Catch reports from an old install.**
+rich #2465 says "Console has no attribute save_svg". At the code from the issue date, `Console.save_svg` is defined in `rich/console.py`, and git history shows it first shipped in 12.1.0 on 3 Apr 2022, four months before the report. Rich's changelog agrees, and the maintainer told the reporter to upgrade. The check needs every step to hold: the report names the owner, that same class or module defines the name, the release came out before the report, and a version the reporter gave is older than that release. It needs no model, and a real reproduction still wins. 9 of 11.
+
+
+**1 Nov, 3:35 AM. Qwen writes a script when the report has no code.**
+Reports that only describe a bug used to fall back with nothing run. Now, if the report quotes an exception and names the package, Qwen writes a short script from the description. It passes the same safety check as a repair and must import the package. It counts for less than the reporter's own code: confirmed at medium at most, and a clean run is cannot reproduce at low. On arrow #896 Qwen wrote exactly the reporter's two unfenced lines, which ran cleanly at 0.17.0.
+
+**1 Nov, 3:40 AM. The PR check counts only the PR's own tests.**
+The first version counted any test naming a changed function, so rich #3915 looked covered because an old test imports `install`. Old tests were written before the change, so they can't show the change is tested. Now only tests the PR adds or changes count, including a new parametrize case. Imports don't count as use, a constructor is found by its class name, and when two modules define the same name the test must name the module. No model, nothing run. Running the PR's tests on its base and head stays on the roadmap.
+
+**1 Nov, 3:45 AM. A bot from the laptop, commenting only on our demo repo.**
+The problem asks for a GitHub App. A hosted App needs a public server, and the model has to stay on this machine, so `bigbrother watch` polls a repo and comments like an App would on a webhook. The repos it may comment on are fixed in `bot.py`, not read from a flag, and checked before anything runs, so it can't comment on a real project.
+
+**1 Nov, 4:10 AM. Reports write this machine's folders as ~ and $TMPDIR.**
+Reports became public comments, and the recorded commands named the home folder and macOS's per-user temp folder. Placeholders like `<clone>` read like leftover data, so the folders are written the way a shell would, and the commands still read and paste the same. The two tinylib examples ran from a scratch folder, so they were replaced by real runs on the demo repo's issues.
+
+**1 Nov, 4:20 AM. The PR check runs the PR's tests.**
+Reading which tests use a function can't show the test checks the change. With `--run-tests` the PR's test files run in the sandbox at its head, then at its base with those files copied in. On humanize #392, #359 and #381 they fail without the fix and pass with it. Running beats reading names, so failing before and passing after makes it `tested`.
+
+**1 Nov, 4:25 AM. The bot is a workflow on the maintainer's own machine.**
+A hosted GitHub App needs a public server and would run the model somewhere else. A self-hosted Actions runner pulls work from GitHub, so it needs no server and nothing reaches the machine from outside, and the comments come from `github-actions`. `bigbrother init` installs it in one command. It uses `pull_request_target` so a PR can't change the workflow, and only people with write access get their PR's tests run.
+
+**1 Nov, 4:40 AM. Use the bot from GitHub only.**
+People shouldn't need a terminal to use it. `/bigbrother check` reruns a check and updates the bot's earlier comment, so a thread never fills with copies, and `/bigbrother help` lists the commands. `bigbrother init` prints the runner setup filled in for the repo and machine. A PR's tests run when its author, or whoever asks, has write access.
+
+**1 Nov, 4:45 AM. A failing test at a PR's head doesn't decide its label.**
+On rich #4079 the PR's test failed in the sandbox because it installed a newer Pygments than Rich's CI pins, not because of the PR. Merged PRs passed their own CI, so calling them "tests fail" would be a false claim. Only failing before and passing after changes a label. The run is still shown.
+
+**1 Nov, 4:45 AM. Requests use the gh login.**
+Without a token GitHub allows 60 requests an hour, and a few PR checks spent it, so the next check crashed. Requests now use `GITHUB_TOKEN` or the `gh auth login` token, and a spent limit says how to fix it.
+
+**1 Nov, 4:50 AM. Reports open with the evidence in the problem statement's words.**
+The problem statement shows evidence as "✓ Reproduced on 2.4.1", "✗ parse_url_v2() does not exist" and "! No test covers the change". Every report and comment now opens with one line in that form, then the label and the detail.

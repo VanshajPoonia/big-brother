@@ -17,7 +17,7 @@ Reading a report is cheap. Checking it is not: find the code, set up the version
 ## What we borrow
 
 - From triage bots: one report per issue, never invent missing details, say how sure you are.
-- From reproduction research: a reproduction only counts if it fails the way the report says (SWT-bench). One refinement round when a generated script breaks for its own reasons (Issue2Test). Give the model the relevant source before it writes a script.
+- From reproduction research: a reproduction only counts if it fails the way the report says (SWT-bench). One repair round when a script breaks for its own reasons (Issue2Test).
 - From security triage: check that every named function and version exists before running anything.
 
 ## What's different
@@ -36,8 +36,8 @@ Input: a GitHub issue URL or a JSON file. Output: one of the labels maintainers 
 ```
 bigbrother check <issue url or file>      label one issue, write report.json and report.md
 bigbrother eval eval/cases.yaml           run on hand-checked issues, print the metrics
-bigbrother doctor                         check Ollama, the model and Docker
-bigbrother check ... --replay <dir>       rerun from saved model responses, no model needed
+bigbrother doctor                         say which layer this machine can run
+bigbrother check ... --replay <report>    rerun with the model answers saved in a report, no model needed
 ```
 
 How it works: [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -59,7 +59,8 @@ Accuracy over the 3 labels with blocked cases counted, per-label precision and r
 
 - **In:** issues on Python projects, the CLI, the 3 labels, the eval.
 - **Stretch, decided at 3:30 AM:** PR fail-to-pass check, SARIF output, OSV lookup for security claims. See [archive/plan-v1-original.md](archive/plan-v1-original.md).
-- **Roadmap:** GitHub App, other languages via tree-sitter, Firecracker sandbox.
+- **Built after 3:30 AM:** the PR check, the bot on our demo repo, scripts for reports with no code.
+- **Roadmap:** a hosted GitHub App, other languages via tree-sitter, Firecracker sandbox.
 
 ## Sources
 

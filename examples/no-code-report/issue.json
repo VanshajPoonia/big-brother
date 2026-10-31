@@ -1,0 +1,8 @@
+{
+  "url": "https://github.com/VanshajPoonia/big-brother-demo/issues/4",
+  "repo": "VanshajPoonia/big-brother-demo",
+  "number": 4,
+  "title": "Long URLs break parse_url",
+  "body": "Since I upgraded to tinylib 1.1.0, calling parse_url on any URL longer than 255 characters stops with ValueError: URL too long. Shorter ones are fine.",
+  "created_at": "2026-10-31T22:16:02Z"
+}

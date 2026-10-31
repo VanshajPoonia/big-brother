@@ -2,12 +2,17 @@
 
 Rules are tried top to bottom and the first one that fits wins:
 
-1. The repro ran and hit the quoted symptom inside the package: confirmed, high.
+1. The repro ran and hit the quoted symptom inside the package: confirmed, high (medium when
+   Qwen wrote the script).
    For wrong output, the reporter's own code printing it counts too, at medium, as long as the
    text isn't written in the script itself.
 2. A central premise is absent: invalid, high (medium when the revision is a date guess).
-3. The repro ran cleanly against the checked-out package: cannot reproduce, medium
-   (high when it was the reporter's own code).
+   Or the report's own traceback shows the reporter's file standing in for a real module,
+   like a script named select.py: invalid, medium.
+   Or the report says a name is missing that the package already shipped before the report,
+   so the reporter's install is older: invalid, medium.
+3. The repro ran cleanly against the checked-out package: cannot reproduce, high for the
+   reporter's own code, low for a script Qwen wrote.
 4. The repro failed some other way: cannot reproduce, low.
 5. Nothing ran (install failed, timeout, no steps, sandbox error): the blocked label,
    low, basis fallback. `cannot reproduce` by default, changeable with `blocked_label`.
@@ -24,11 +29,13 @@ from bigbrother.schema import (
     ExecutionStatus,
     Extraction,
     Label,
+    OldInstall,
     PremiseResult,
     ReproScript,
     Revision,
     RevisionSource,
     RunResult,
+    Shadowing,
     Verdict,
 )
 
@@ -96,6 +103,8 @@ def decide(
     revision: Revision | None,
     *,
     repro: ReproScript | None = None,
+    shadowing: Shadowing | None = None,
+    old_install: OldInstall | None = None,
     blocked_label: Label = Label.CANNOT_REPRODUCE,
 ) -> Verdict:
     context = _revision_note(revision)
@@ -107,7 +116,12 @@ def decide(
         quote = extraction.symptom.quote if extraction.symptom else ""
         hit = quote if run.exception_type is None or quote.startswith(run.exception_type) else f"{run.exception_type}: {quote}"
         reasons = [f"the repro hit the reported symptom ({hit or run.exception_type or 'as reported'}) inside the package"]
-        return Verdict(label=Label.CONFIRMED, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=1,
+        confidence = Confidence.HIGH
+        if repro is not None and repro.origin == "model":
+            # Qwen chose the calls, so it may not be what the reporter did.
+            confidence = Confidence.MEDIUM
+            reasons.append("Qwen wrote the script, not the reporter, so it may not be exactly what they ran")
+        return Verdict(label=Label.CONFIRMED, confidence=confidence, basis=Basis.EVIDENCE, rule=1,
                        reasons=reasons + _premise_notes(premises, set()) + context)
 
     # Rule 1 for wrong output, which has no traceback to place inside the package. Only the
@@ -137,13 +151,34 @@ def decide(
         return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM if guessed else Confidence.HIGH,
                        basis=Basis.EVIDENCE, rule=2, reasons=reasons + _premise_notes(premises, set(absent)) + context)
 
+    # Rule 2, second case: the reporter's own file stood in for a real module.
+    if shadowing is not None:
+        reasons = [
+            f"the report's own traceback shows the reporter's file {shadowing.path} loaded in place of "
+            f"the module {shadowing.module!r} ({shadowing.quote}), so the error comes from the file name"
+        ]
+        return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=2,
+                       reasons=reasons + _premise_notes(premises, set()) + context)
+
+    # Rule 2, third case: the "missing" name had already shipped, so the reporter's install is older.
+    if old_install is not None:
+        o = old_install
+        reasons = [
+            f"the report says {o.owner} has no {o.name}, but it's defined at {o.path}:{o.line} (`{o.text}`) "
+            f"and first shipped in {o.added_in} on {o.released:%d %b %Y}, before the report, "
+            f"so the reporter's install is older than that"
+        ]
+        return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=2,
+                       reasons=reasons + _premise_notes(premises, set()) + context)
+
     if blocked is None and run.exit_code == 0 and run.exception_type is None and not run.symptom_matched:
         # Rule 3.
+        # Qwen's script not failing says little: it may not do what the reporter did.
         own_code = repro is not None and repro.origin == "reporter"
-        confidence = Confidence.HIGH if own_code else Confidence.MEDIUM
-        what = "the reporter's own code" if own_code else "a generated script"
+        confidence = Confidence.HIGH if own_code else Confidence.LOW
+        what = "the reporter's own code" if own_code else "a script Qwen wrote"
         reasons = [f"{what} ran cleanly, the reported symptom didn't appear"]
-        if run.imported_from_checkout is None:
+        if run.imported_from_checkout is None and own_code:
             confidence = Confidence.MEDIUM
             reasons.append("couldn't confirm the script used the checked-out package")
         return Verdict(label=Label.CANNOT_REPRODUCE, confidence=confidence, basis=Basis.EVIDENCE, rule=3,

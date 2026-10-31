@@ -1,0 +1,15 @@
+#!/bin/sh
+# Every commit needs the coding agent and model lines (hackathon rule). Checked as you commit.
+. "$(dirname "$0")/_python"
+exec "$PY" - "$1" <<'PY'
+import sys
+sys.path.insert(0, "scripts")
+from preflight import MODEL_LINE, message_problems
+text = open(sys.argv[1], encoding="utf-8").read()
+body = "\n".join(line for line in text.splitlines() if not line.startswith("#"))
+problems = message_problems(body)
+if problems:
+    print("commit-msg: " + "; ".join(problems))
+    print(f"commit-msg: end the message with\n  Coding agent: <agent, or none>\n  {MODEL_LINE}")
+    sys.exit(1)
+PY

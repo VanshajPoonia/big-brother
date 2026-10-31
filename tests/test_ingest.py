@@ -109,3 +109,17 @@ def test_ensure_clone_fetches_tags_when_cached(tmp_path: Path, tinylib_repo):
 def test_ensure_clone_rejects_bad_repo(tmp_path: Path):
     with pytest.raises(ValueError):
         ensure_clone("../etc", tmp_path)
+
+
+def test_a_spent_rate_limit_says_how_to_fix_it():
+    import httpx
+    import pytest
+
+    from bigbrother.ingest import RATE_LIMITED, fetch_issue
+
+    def handler(request):
+        return httpx.Response(403, headers={"x-ratelimit-remaining": "0"}, json={"message": "API rate limit exceeded"})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client, pytest.raises(ValueError, match="gh auth login"):
+        fetch_issue("https://github.com/a/b/issues/1", client=client)
+    assert "60 an hour" in RATE_LIMITED

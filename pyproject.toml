@@ -24,6 +24,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/bigbrother"]
 
+# The sandbox image is built from this Dockerfile, so an installed copy needs it too.
+[tool.hatch.build.targets.wheel.force-include]
+"docker/Dockerfile" = "bigbrother/docker/Dockerfile"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["docker: needs a running Docker daemon"]

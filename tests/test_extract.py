@@ -153,3 +153,28 @@ def test_latest_is_no_version_rather_than_a_failure(load_issue):
     # humanize #136 says "Humanize: latest". That used to fail the whole call three times.
     extraction, _, _ = extract(load_issue("no_steps"), answer(claimed_version="latest"))
     assert extraction.claimed_version is None
+
+
+def test_quote_marks_around_a_wrong_value_are_removed(load_issue):
+    issue = load_issue("real_bug").model_copy(update={"body": "intword prints '1000.0 sextillion' for 10**24 - 1"})
+    extraction, _, _ = extract(issue, answer(symptom={"kind": "wrong_output", "quote": "'1000.0 sextillion'", "exception_type": None}))
+    assert extraction.symptom.quote == "1000.0 sextillion"
+
+
+def test_only_matching_quote_marks_are_removed(load_issue):
+    issue = load_issue("real_bug").model_copy(update={"body": 'it says "foo" is wrong'})
+    extraction, _, _ = extract(issue, answer(symptom={"kind": "other", "quote": '"foo" is wrong', "exception_type": None}))
+    assert extraction.symptom.quote == '"foo" is wrong'
+
+
+def test_cleaning_a_quote_never_brings_back_a_dropped_symptom(load_issue):
+    issue = load_issue("real_bug")
+    extraction, _, _ = extract(issue, answer(symptom={"kind": "other", "quote": "'not in the report'", "exception_type": None}))
+    assert extraction.symptom is None
+
+
+def test_a_version_range_isnt_a_claimed_version(load_issue):
+    issue = load_issue("real_bug").model_copy(update={"body": "Version: humanize main (4.x)"})
+    extraction, _, notes = extract(issue, answer(claimed_version="4.x"))
+    assert extraction.claimed_version is None
+    assert "range" in notes[0]

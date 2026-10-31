@@ -1,0 +1,140 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/392",
+    "repo": "python-humanize/humanize",
+    "number": 392,
+    "title": "Fix intcomma overflow for large Python integers",
+    "base_sha": "3201e702ed7eae506f793fad0aec204f387aeb4c",
+    "head_sha": "244ac0ed6baeb3d1789be61e1a0f8ef962e716f4"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_number.py fails without the change (2 failed, 232 passed in 0.08s) and passes with it (234 passed in 0.07s), so the PR's tests check the change",
+    "`intcomma` (src/humanize/number.py:116) changed, and a test this PR adds or changes uses it at tests/test_number.py:90",
+    "the PR changes 1 test file: tests/test_number.py"
+  ],
+  "functions": [
+    {
+      "path": "src/humanize/number.py",
+      "name": "intcomma",
+      "line": 116,
+      "changed_lines": 1,
+      "mentions": [
+        {
+          "path": "tests/test_number.py",
+          "line": 90,
+          "text": "assert humanize.intcomma(value) == expected",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_benchmarks.py",
+          "line": 37,
+          "text": "benchmark(humanize.intcomma, 1_234_567_890)",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_i18n.py",
+          "line": 53,
+          "text": "assert humanize.intcomma(number) == \"10,000,000\"",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_number.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_number.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................................................................ [ 30%]\n........................................................................ [ 61%]\n........................................................................ [ 92%]\n..................                                                       [100%]\n234 passed in 0.07s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/python-humanize__humanize archive --format=tar 244ac0ed6baeb3d1789be61e1a0f8ef962e716f4",
+      "docker volume create bb-b0dab44b3b53-deps",
+      "docker run --name bb-b0dab44b3b53-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-tmdxzb30/src,target=/src --mount type=volume,source=bb-b0dab44b3b53-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e '\"'\"'/src[tests]'\"'\"' pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-9a425409e9da4f818c4b5b3de27e7140; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-b0dab44b3b53-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-tmdxzb30/src,target=/src,readonly --mount type=volume,source=bb-b0dab44b3b53-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_number.py",
+      "docker rm -f bb-b0dab44b3b53-install bb-b0dab44b3b53-tests",
+      "docker volume rm -f bb-b0dab44b3b53-deps"
+    ],
+    "image_digest": "sha256:f0570bf79980bebabcdaf783b4f07dbe7489b11f978f3f7f9e2d601e5e37db2e",
+    "python_version": "3.12.16",
+    "packages": [
+      "coverage==7.17.0",
+      "freezegun==1.5.5",
+      "-e file:///src",
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "py-cpuinfo2==10.1.1",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "pytest-benchmark==5.3.0",
+      "pytest-codspeed==5.0.4",
+      "pytest-cov==7.1.0",
+      "python-dateutil==3.0.0",
+      "rich==15.0.0",
+      "six==1.17.0",
+      "tzdata==2026.6"
+    ],
+    "duration_s": 3.93
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": "....................................................FF.................. [ 30%]\n........................................................................ [ 61%]\n........................................................................ [ 92%]\n..................                                                       [100%]\n=================================== FAILURES ===================================\n________________________ test_intcomma_large_integer[1] ________________________\n\nsign = 1\n\n    @pytest.mark.parametrize(\"sign\", [1, -1])\n    def test_intcomma_large_integer(sign: int) -> None:\n        value = sign * (10**400 + 123)\n        expected = (\"-\" if sign < 0 else \"\") + \"10\" + \",000\" * 132 + \",123\"\n>       assert humanize.intcomma(value) == expected\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_number.py:90: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nvalue = 100000000000000000...0000000000000000123, ndigits = None\n\n    def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:\n        \"\"\"Converts an integer to a string containing commas every three digits.\n    \n        For example, 3000 becomes \"3,000\" and 45000 becomes \"45,000\". To maintain some\n        compatibility with Django's `intcomma`, this function also accepts floats.\n    \n        Examples:\n            ```pycon\n            >>> intcomma(100)\n            '100'\n            >>> intcomma(\"1000\")\n            '1,000'\n            >>> intcomma(1_000_000)\n            '1,000,000'\n            >>> intcomma(1_234_567.25)\n            '1,234,567.25'\n            >>> intcomma(1234.5454545, 2)\n            '1,234.55'\n            >>> intcomma(14308.40, 1)\n            '14,308.4'\n            >>> intcomma(\"14308.40\", 1)\n            '14,308.4'\n            >>> intcomma(None)\n            'None'\n    \n            ```\n    \n        Args:\n            value (int, float, str): Integer or float to convert.\n            ndigits (int, None): Digits of precision for rounding after the decimal point.\n    \n        Returns:\n            str: String containing commas every three digits.\n        \"\"\"\n        import math\n    \n        thousands_sep = thousands_separator()\n        decimal_sep = decimal_separator()\n        try:\n            if isinstance(value, str):\n                value = value.replace(thousands_sep, \"\").replace(decimal_sep, \".\")\n                if not math.isfinite(float(value)):\n                    return _format_not_finite(float(value))\n                if \".\" in value:\n                    value = float(value)\n                else:\n                    value = int(value)\n            else:\n>               if not math.isfinite(float(value)):\n                                     ^^^^^^^^^^^^\nE               OverflowError: int too large to convert to float\n\nsrc/humanize/number.py:164: OverflowError\n_______________________ test_intcomma_large_integer[-1] ________________________\n\nsign = -1\n\n    @pytest.mark.parametrize(\"sign\", [1, -1])\n    def test_intcomma_large_integer(sign: int) -> None:\n        value = sign * (10**400 + 123)\n        expected = (\"-\" if sign < 0 else \"\") + \"10\" + \",000\" * 132 + \",123\"\n>       assert humanize.intcomma(value) == expected\n               ^^^^^^^^^^^^^^^^^^^^^^^^\n\ntests/test_number.py:90: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nvalue = -10000000000000000...0000000000000000123, ndigits = None\n\n    def intcomma(value: NumberOrString, ndigits: int | None = None) -> str:\n        \"\"\"Converts an integer to a string containing commas every three digits.\n    \n        For example, 3000 becomes \"3,000\" and 45000 becomes \"45,000\". To maintain some\n        compatibility with Django's `intcomma`, this function also accepts floats.\n    \n        Examples:\n            ```pycon\n            >>> intcomma(100)\n            '100'\n            >>> intcomma(\"1000\")\n            '1,000'\n            >>> intcomma(1_000_000)\n            '1,000,000'\n            >>> intcomma(1_234_567.25)\n            '1,234,567.25'\n            >>> intcomma(1234.5454545, 2)\n            '1,234.55'\n            >>> intcomma(14308.40, 1)\n            '14,308.4'\n            >>> intcomma(\"14308.40\", 1)\n            '14,308.4'\n            >>> intcomma(None)\n            'None'\n    \n            ```\n    \n        Args:\n            value (int, float, str): Integer or float to convert.\n            ndigits (int, None): Digits of precision for rounding after the decimal point.\n    \n        Returns:\n            str: String containing commas every three digits.\n        \"\"\"\n        import math\n    \n        thousands_sep = thousands_separator()\n        decimal_sep = decimal_separator()\n        try:\n            if isinstance(value, str):\n                value = value.replace(thousands_sep, \"\").replace(decimal_sep, \".\")\n                if not math.isfinite(float(value)):\n                    return _format_not_finite(float(value))\n                if \".\" in value:\n                    value = float(value)\n                else:\n                    value = int(value)\n            else:\n>               if not math.isfinite(float(value)):\n                                     ^^^^^^^^^^^^\nE               OverflowError: int too large to convert to float\n\nsrc/humanize/number.py:164: OverflowError\n=========================== short test summary info ============================\nFAILED tests/test_number.py::test_intcomma_large_integer[1] - OverflowError: ...\nFAILED tests/test_number.py::test_intcomma_large_integer[-1] - OverflowError:...\n2 failed, 232 passed in 0.08s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/python-humanize__humanize archive --format=tar 3201e702ed7eae506f793fad0aec204f387aeb4c",
+      "docker volume create bb-ba41f1b7404a-deps",
+      "docker run --name bb-ba41f1b7404a-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-uamzyb_o/src,target=/src --mount type=volume,source=bb-ba41f1b7404a-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e '\"'\"'/src[tests]'\"'\"' pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-109d3705c18047d1a4b3cb596a97c5dc; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-ba41f1b7404a-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-uamzyb_o/src,target=/src,readonly --mount type=volume,source=bb-ba41f1b7404a-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_number.py",
+      "docker rm -f bb-ba41f1b7404a-install bb-ba41f1b7404a-tests",
+      "docker volume rm -f bb-ba41f1b7404a-deps"
+    ],
+    "image_digest": "sha256:f0570bf79980bebabcdaf783b4f07dbe7489b11f978f3f7f9e2d601e5e37db2e",
+    "python_version": "3.12.16",
+    "packages": [
+      "coverage==7.17.0",
+      "freezegun==1.5.5",
+      "-e file:///src",
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "py-cpuinfo2==10.1.1",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "pytest-benchmark==5.3.0",
+      "pytest-codspeed==5.0.4",
+      "pytest-cov==7.1.0",
+      "python-dateutil==3.0.0",
+      "rich==15.0.0",
+      "six==1.17.0",
+      "tzdata==2026.6"
+    ],
+    "duration_s": 3.85
+  }
+}

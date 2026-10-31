@@ -195,6 +195,27 @@ class RunResult(BaseModel):
         return value[:OUTPUT_CAP]
 
 
+class Shadowing(BaseModel):
+    """The reporter's own file loaded in place of a real module, as their own traceback shows."""
+
+    module: str
+    path: str
+    quote: str = Field(max_length=300)
+
+
+class OldInstall(BaseModel):
+    """The report says a name is missing, but the code the reporter should have had defines it,
+    in a release that came out before the report."""
+
+    owner: str
+    name: str
+    path: str
+    line: int = Field(ge=1)
+    text: str = Field(max_length=200)
+    added_in: str
+    released: datetime
+
+
 class ModelCall(BaseModel):
     """One request to the model and its raw response, saved as evidence."""
 
@@ -238,4 +259,6 @@ class Report(BaseModel):
     run: RunResult | None = None
     verdict: Verdict
     model_calls: list[ModelCall] = Field(default_factory=list)
+    shadowing: Shadowing | None = None
+    old_install: OldInstall | None = None
     notes: list[str] = Field(default_factory=list)

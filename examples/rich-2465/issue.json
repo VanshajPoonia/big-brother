@@ -1,0 +1,8 @@
+{
+  "url": "https://github.com/Textualize/rich/issues/2465",
+  "repo": "Textualize/rich",
+  "number": 2465,
+  "title": "[BUG] Console has No attribute save_svg",
+  "body": "You may find a solution to your problem in the [docs](https://rich.readthedocs.io/en/latest/introduction.html) or [issues](https://github.com/willmcgugan/rich/issues).\r\n\r\n**Describe the bug**\r\n\r\nI'm trying to save the table created in the console using rich as SVG image using save_svg function but encountering the above error mentioned in the title. Please find my code and error below.\r\n\r\n![image](https://user-images.githubusercontent.com/28348429/184615704-08a20a26-c893-4ea9-bb18-d42d0d0205b6.png)\r\n\r\n![image](https://user-images.githubusercontent.com/28348429/184615767-5656c246-56dd-40c9-8051-319c136ab6bd.png)\r\n\r\n\r\n**Platform**\r\nOS - Windows.\r\nPython Version - 3.10.0\r\n\r\nI may ask you to copy and paste the output of the following commands. It may save some time if you do it now.\r\n\r\nIf you're using Rich in a terminal:\r\n\r\n```\r\npython -m rich.diagnose\r\npip freeze | grep rich\r\n```\r\n![image](https://user-images.githubusercontent.com/28348429/184616068-57cce6f2-dca3-464f-8470-8e475e78df7e.png)\r\n",
+  "created_at": "2022-08-15T10:01:09Z"
+}

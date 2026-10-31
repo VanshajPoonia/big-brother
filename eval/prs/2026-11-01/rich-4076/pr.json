@@ -1,0 +1,120 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/4076",
+    "repo": "Textualize/rich",
+    "number": 4076,
+    "title": "preserve newlines",
+    "base_sha": "9cb198944f8184df92217efc8b20d3fffa4b4fa0",
+    "head_sha": "48293cde887c4f25a7bca022131b56495f370a88"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_ansi.py fails without the change (4 failed, 20 passed in 0.14s) and passes with it (24 passed in 0.11s), so the PR's tests check the change",
+    "`AnsiDecoder.decode` (rich/ansi.py:126) changed, and a test this PR adds or changes uses it at tests/test_ansi.py:22",
+    "the PR changes 1 test file: tests/test_ansi.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/ansi.py",
+      "name": "AnsiDecoder.decode",
+      "line": 126,
+      "changed_lines": 3,
+      "mentions": [
+        {
+          "path": "tests/test_ansi.py",
+          "line": 22,
+          "text": "lines = list(decoder.decode(terminal_codes))",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_ansi.py",
+          "line": 38,
+          "text": "ansi_text = ansi_bytes.decode(\"utf-8\")",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_ansi.py",
+          "line": 70,
+          "text": "text = Text.from_ansi(ansi_bytes.decode())",
+          "in_pr": true
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_ansi.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_ansi.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................                                                 [100%]\n24 passed in 0.11s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 48293cde887c4f25a7bca022131b56495f370a88",
+      "docker volume create bb-23eecc382197-deps",
+      "docker run --name bb-23eecc382197-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-alw5i21y/src,target=/src --mount type=volume,source=bb-23eecc382197-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-750afb24f3424b8da7442605bbc0db00; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-23eecc382197-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-alw5i21y/src,target=/src,readonly --mount type=volume,source=bb-23eecc382197-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_ansi.py",
+      "docker rm -f bb-23eecc382197-install bb-23eecc382197-tests",
+      "docker volume rm -f bb-23eecc382197-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 4.3
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": "FFF....................F                                                 [100%]\n=================================== FAILURES ===================================\n_________________________________ test_decode __________________________________\n\n    def test_decode():\n        console = Console(\n            force_terminal=True, legacy_windows=False, color_system=\"truecolor\"\n        )\n        console.begin_capture()\n        console.print(\"Hello\")\n        console.print(\"[b]foo[/b]\")\n        console.print(\"[link http://example.org]bar\")\n        console.print(\"[#ff0000 on color(200)]red\")\n        console.print(\"[color(200) on #ff0000]red\")\n        terminal_codes = console.end_capture()\n    \n        decoder = AnsiDecoder()\n        lines = list(decoder.decode(terminal_codes))\n        print(repr(lines))\n        expected = [\n            Text(\"Hello\"),\n            Text(\"foo\", spans=[Span(0, 3, Style.parse(\"bold\"))]),\n            Text(\"bar\", spans=[Span(0, 3, Style.parse(\"link http://example.org\"))]),\n            Text(\"red\", spans=[Span(0, 3, Style.parse(\"#ff0000 on color(200)\"))]),\n            Text(\"red\", spans=[Span(0, 3, Style.parse(\"color(200) on #ff0000\"))]),\n            Text(\"\"),\n        ]\n    \n>       assert lines == expected\nE       AssertionError: assert [<text 'Hello...ue=0))))] ''>] == [<text 'Hello...ext '' [] ''>]\nE         \nE         Right contains one more item: <text '' [] ''>\nE         Use -v to get more diff\n\ntests/test_ansi.py:33: AssertionError\n----------------------------- Captured stdout call -----------------------------\n[<text 'Hello' [] ''>, <text 'foo' [Span(0, 3, Style(bold=True))] ''>, <text 'bar' [Span(0, 3, Style(link='http://example.org'))] ''>, <text 'red' [Span(0, 3, Style(color=Color('#ff0000', ColorType.TRUECOLOR, triplet=ColorTriplet(red=255, green=0, blue=0)), bgcolor=Color('color(200)', ColorType.EIGHT_BIT, number=200)))] ''>, <text 'red' [Span(0, 3, Style(color=Color('color(200)', ColorType.EIGHT_BIT, number=200), bgcolor=Color('#ff0000', ColorType.TRUECOLOR, triplet=ColorTriplet(red=255, green=0, blue=0))))] ''>]\n_____________________________ test_decode_example ______________________________\n\n    def test_decode_example():\n        ansi_bytes = b\"\\x1b[01m\\x1b[KC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:\\x1b[m\\x1b[K In function '\\x1b[01m\\x1b[Kmain\\x1b[m\\x1b[K':\\n\\x1b[01m\\x1b[KC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:3:5:\\x1b[m\\x1b[K \\x1b[01;35m\\x1b[Kwarning: \\x1b[m\\x1b[Kunused variable '\\x1b[01m\\x1b[Ka\\x1b[m\\x1b[K' [\\x1b[01;35m\\x1b[K-Wunused-variable\\x1b[m\\x1b[K]\\n    3 | int \\x1b[01;35m\\x1b[Ka\\x1b[m\\x1b[K=1;\\n      |     \\x1b[01;35m\\x1b[K^\\x1b[m\\x1b[K\\n\"\n        ansi_text = ansi_bytes.decode(\"utf-8\")\n    \n        text = Text.from_ansi(ansi_text)\n    \n        console = Console(\n            force_terminal=True, legacy_windows=False, color_system=\"truecolor\"\n        )\n        with console.capture() as capture:\n            console.print(text)\n        result = capture.get()\n        print(repr(result))\n        print(result)\n        expected = \"\\x1b[1mC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:\\x1b[0m In function '\\x1b[1mmain\\x1b[0m':\\n\\x1b[1mC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:3:5:\\x1b[0m \\x1b[1;35mwarning: \\x1b[0munused variable '\\x1b[1ma\\x1b[0m' \\n[\\x1b[1;35m-Wunused-variable\\x1b[0m]\\n    3 | int \\x1b[1;35ma\\x1b[0m=1;\\n      |     \\x1b[1;35m^\\x1b[0m\\n\\n\"\n>       assert result == expected\nE       AssertionError: assert '\\x1b[1mC:\\\\U...35m^\\x1b[0m\\n' == '\\x1b[1mC:\\\\U...m^\\x1b[0m\\n\\n'\nE         \nE         Skipping 264 identical leading characters in diff, use -v to show\nE           1;35m^\u001b[0m\nE         -\n\ntests/test_ansi.py:51: AssertionError\n----------------------------- Captured stdout call -----------------------------\n\"\\x1b[1mC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:\\x1b[0m In function '\\x1b[1mmain\\x1b[0m':\\n\\x1b[1mC:\\\\Users\\\\stefa\\\\AppData\\\\Local\\\\Temp\\\\tmp3ydingba:3:5:\\x1b[0m \\x1b[1;35mwarning: \\x1b[0munused variable '\\x1b[1ma\\x1b[0m' \\n[\\x1b[1;35m-Wunused-variable\\x1b[0m]\\n    3 | int \\x1b[1;35ma\\x1b[0m=1;\\n      |     \\x1b[1;35m^\\x1b[0m\\n\"\n\u001b[1mC:\\Users\\stefa\\AppData\\Local\\Temp\\tmp3ydingba:\u001b[0m In function '\u001b[1mmain\u001b[0m':\n\u001b[1mC:\\Users\\stefa\\AppData\\Local\\Temp\\tmp3ydingba:3:5:\u001b[0m \u001b[1;35mwarning: \u001b[0munused variable '\u001b[1ma\u001b[0m' \n[\u001b[1;35m-Wunused-variable\u001b[0m]\n    3 | int \u001b[1;35ma\u001b[0m=1;\n      |     \u001b[1;35m^\u001b[0m\n\n_ test_decode_issue_2688[\\x1b[31mFound 4 errors in 2 files (checked 18 source files)\\x1b(B\\x1b[m\\n-Found 4 errors in 2 files (checked 18 source files)\\n] _\n\nansi_bytes = b'\\x1b[31mFound 4 errors in 2 files (checked 18 source files)\\x1b(B\\x1b[m\\n'\nexpected_text = 'Found 4 errors in 2 files (checked 18 source files)\\n'\n\n    @pytest.mark.parametrize(\n        \"ansi_bytes, expected_text\",\n        [\n            # https://github.com/Textualize/rich/issues/2688\n            (\n                b\"\\x1b[31mFound 4 errors in 2 files (checked 18 source files)\\x1b(B\\x1b[m\\n\",\n                \"Found 4 errors in 2 files (checked 18 source files)\\n\",\n            ),\n            # https://mail.python.org/pipermail/python-list/2007-December/424756.html\n            (b\"Hallo\", \"Hallo\"),\n            (b\"\\x1b(BHallo\", \"Hallo\"),\n            (b\"\\x1b(JHallo\", \"Hallo\"),\n            (b\"\\x1b(BHal\\x1b(Jlo\", \"Hallo\"),\n        ],\n    )\n    def test_decode_issue_2688(ansi_bytes, expected_text):\n        text = Text.from_ansi(ansi_bytes.decode())\n    \n>       assert str(text) == expected_text\nE       AssertionError: assert 'Found 4 erro...source files)' == 'Found 4 erro...urce files)\\n'\nE         \nE         Skipping 40 identical leading characters in diff, use -v to show\nE         - urce files)\nE         ?            -\nE         + urce files)\n\ntests/test_ansi.py:72: AssertionError\n_____________________________ test_decode_newlines _____________________________\n\n    def test_decode_newlines():\n        \"\"\"Test newlines are preserved.\n        Regression test for https://github.com/Textualize/rich/issues/3577\n        \"\"\"\n        assert Text.from_ansi(\"\").plain == \"\"\n>       assert Text.from_ansi(\"\\n\").plain == \"\\n\"\nE       AssertionError: assert '' == '\\n'\nE         \nE         Strings contain only whitespace, escaping them using repr()\nE         - '\\n'\nE         + ''\n\ntests/test_ansi.py:94: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_ansi.py::test_decode - AssertionError: assert [<text 'Hello...\nFAILED tests/test_ansi.py::test_decode_example - AssertionError: assert '\\x1b...\nFAILED tests/test_ansi.py::test_decode_issue_2688[\\x1b[31mFound 4 errors in 2 files (checked 18 source files)\\x1b(B\\x1b[m\\n-Found 4 errors in 2 files (checked 18 source files)\\n]\nFAILED tests/test_ansi.py::test_decode_newlines - AssertionError: assert '' =...\n4 failed, 20 passed in 0.14s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 9cb198944f8184df92217efc8b20d3fffa4b4fa0",
+      "docker volume create bb-1159a8a9cffb-deps",
+      "docker run --name bb-1159a8a9cffb-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-orjodnlf/src,target=/src --mount type=volume,source=bb-1159a8a9cffb-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-85eb16d2002c4a20b4648430a2fc967a; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-1159a8a9cffb-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-orjodnlf/src,target=/src,readonly --mount type=volume,source=bb-1159a8a9cffb-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_ansi.py",
+      "docker rm -f bb-1159a8a9cffb-install bb-1159a8a9cffb-tests",
+      "docker volume rm -f bb-1159a8a9cffb-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.74
+  }
+}

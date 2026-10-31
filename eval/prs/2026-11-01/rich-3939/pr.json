@@ -1,0 +1,24 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3939",
+    "repo": "Textualize/rich",
+    "number": 3939,
+    "title": "typing highlighter",
+    "base_sha": "3286095ff8b70e093dbbc4136ff7ba7d51944bec",
+    "head_sha": "624b30c5979ec602291a2fff0be8d222060f86d1"
+  },
+  "label": "no function changed",
+  "reasons": [
+    "no function in the package's code changed, only lines outside functions or no code at all",
+    "the PR changes 0 test files"
+  ],
+  "functions": [],
+  "tests_changed": [],
+  "outside_functions": [
+    "rich/highlighter.py: 8 changed lines outside any function"
+  ],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}

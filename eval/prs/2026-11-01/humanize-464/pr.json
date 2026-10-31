@@ -1,0 +1,113 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/464",
+    "repo": "python-humanize/humanize",
+    "number": 464,
+    "title": "Translate byte-size labels into Persian",
+    "base_sha": "785e5dcc0d0308ad0dff3f6cc0faa7085ad0375b",
+    "head_sha": "5d6f5ed9f34c5bbb400ee7c75160a82030e40b21"
+  },
+  "label": "no function changed",
+  "reasons": [
+    "tests/test_i18n.py passes with and without the change (6 passed, 117 skipped in 0.35s), so it doesn't show the change is tested",
+    "no function in the package's code changed, only lines outside functions or no code at all",
+    "the PR changes 1 test file: tests/test_i18n.py"
+  ],
+  "functions": [],
+  "tests_changed": [
+    "tests/test_i18n.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_i18n.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 58%]\nssssssss......sssssssssssssssssssssssssssssssssssss                      [100%]\n6 passed, 117 skipped in 0.35s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/python-humanize__humanize archive --format=tar 5d6f5ed9f34c5bbb400ee7c75160a82030e40b21",
+      "docker volume create bb-e45638070013-deps",
+      "docker run --name bb-e45638070013-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-c5sge790/src,target=/src --mount type=volume,source=bb-e45638070013-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e '\"'\"'/src[tests]'\"'\"' pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-282736625039431aac850434458e14b4; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-e45638070013-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-c5sge790/src,target=/src,readonly --mount type=volume,source=bb-e45638070013-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_i18n.py",
+      "docker rm -f bb-e45638070013-install bb-e45638070013-tests",
+      "docker volume rm -f bb-e45638070013-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "coverage==7.17.0",
+      "freezegun==1.5.5",
+      "-e file:///src",
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "py-cpuinfo2==10.1.1",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "pytest-benchmark==5.3.0",
+      "pytest-codspeed==5.0.4",
+      "pytest-cov==7.1.0",
+      "python-dateutil==3.0.0",
+      "rich==15.0.0",
+      "six==1.17.0",
+      "tzdata==2026.6"
+    ],
+    "duration_s": 5.18
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 58%]\nssssssss......sssssssssssssssssssssssssssssssssssss                      [100%]\n6 passed, 117 skipped in 0.38s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/python-humanize__humanize archive --format=tar 785e5dcc0d0308ad0dff3f6cc0faa7085ad0375b",
+      "docker volume create bb-66e4dae8cdae-deps",
+      "docker run --name bb-66e4dae8cdae-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-j2xzaz3l/src,target=/src --mount type=volume,source=bb-66e4dae8cdae-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e '\"'\"'/src[tests]'\"'\"' pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-ab3b1fdda56e4041b83fa83bd1ab3047; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-66e4dae8cdae-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-j2xzaz3l/src,target=/src,readonly --mount type=volume,source=bb-66e4dae8cdae-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_i18n.py",
+      "docker rm -f bb-66e4dae8cdae-install bb-66e4dae8cdae-tests",
+      "docker volume rm -f bb-66e4dae8cdae-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "coverage==7.17.0",
+      "freezegun==1.5.5",
+      "-e file:///src",
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "py-cpuinfo2==10.1.1",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "pytest-benchmark==5.3.0",
+      "pytest-codspeed==5.0.4",
+      "pytest-cov==7.1.0",
+      "python-dateutil==3.0.0",
+      "rich==15.0.0",
+      "six==1.17.0",
+      "tzdata==2026.6"
+    ],
+    "duration_s": 4.59
+  }
+}

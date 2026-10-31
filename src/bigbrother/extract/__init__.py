@@ -35,7 +35,9 @@ Fill in:
   Only list names that appear in the issue. Don't add ones you know from elsewhere.
 - symptom: what goes wrong, or null if the issue doesn't say.
   - kind: "exception", "wrong_output", "hang" or "other".
-  - quote: copied word for word from the issue, like an error line. Never reword it.
+  - quote: copied word for word from the issue. Never reword it. For an exception, the error line,
+    like "ValueError: URL too long". For wrong output, only the wrong value as the program prints it,
+    like "1000.0 sextillion", not the line of code and not a sentence about it.
   - exception_type: the exception class name if there is one, like "ValueError", else null.
 - has_steps: true if the issue has code or commands someone could run to see the problem.
 """
@@ -84,7 +86,18 @@ def check_against_issue(issue: Issue, extraction: Extraction) -> tuple[Extractio
         notes.append(f"dropped the symptom, its quote isn't in the report: {extraction.symptom.quote!r}")
         updates["symptom"] = None
 
-    if extraction.claimed_version and not _version_written(issue, extraction.claimed_version):
+    elif extraction.symptom:
+        # Qwen often keeps the quote marks or backticks around a value. They aren't part of the output.
+        quote = extraction.symptom.quote.strip()
+        while len(quote) > 2 and quote[0] == quote[-1] and quote[0] in "`'\"":
+            quote = quote[1:-1].strip()
+        if quote != extraction.symptom.quote:
+            updates["symptom"] = extraction.symptom.model_copy(update={"quote": quote})
+
+    if extraction.claimed_version and not SINGLE_RELEASE.match(extraction.claimed_version):
+        notes.append(f"dropped claimed version {extraction.claimed_version!r}, it's a range, not one release")
+        updates["claimed_version"] = None
+    elif extraction.claimed_version and not _version_written(issue, extraction.claimed_version):
         notes.append(f"dropped claimed version {extraction.claimed_version!r}, the report doesn't mention it")
         updates["claimed_version"] = None
 
