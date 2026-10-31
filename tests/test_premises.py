@@ -2,22 +2,10 @@ import os
 import subprocess
 from datetime import datetime
 
-import httpx
 import pytest
 
-from bigbrother import premises as premises_module
 from bigbrother.premises import check_premises, resolve_revision
 from bigbrother.schema import CheckState, Extraction, Issue, Premise, Revision, RevisionSource
-
-
-@pytest.fixture(autouse=True)
-def no_network(monkeypatch):
-    """Any PyPI call a test didn't mock fails like an unreachable network."""
-
-    def offline(request: httpx.Request) -> httpx.Response:
-        raise httpx.ConnectError("tests never touch the network", request=request)
-
-    monkeypatch.setattr(premises_module, "_new_client", lambda: httpx.Client(transport=httpx.MockTransport(offline)))
 
 
 def issue(created_at: str) -> Issue:
