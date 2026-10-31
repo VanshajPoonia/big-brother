@@ -221,7 +221,7 @@ Add them to eval/cases.yaml:
   checked_by: Radhika
   note: the function in the report doesn't exist, maintainer said so
 
-Branch eval/cases. The commit message ends with "Coding agent: none" and "Models used in project: Qwen3 4B (qwen3:4b via Ollama)". PR with the template and "Part of #5", ask Vanshaj to review.
+Branch eval/cases. The commit message ends with "Coding agent: none" and "Models used in project: Qwen3 4B (qwen3:4b via Ollama)". PR with the template and "Part of #6", ask Somya or Abhijeet to review. The click-by-click steps are in docs/RUNBOOK.md, "Radhika, step by step".
 ```
 
 ### Writing (alongside phases 1 and 2)
