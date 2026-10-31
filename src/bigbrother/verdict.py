@@ -83,9 +83,11 @@ def decide(
     blocked = _blocked(run, extraction)
 
     # Rule 1. A wrong minor detail never overrides a real reproduction, it's only listed.
-    if blocked is None and run.symptom_matched and run.in_package:
-        hit = f"{run.exception_type}: " if run.exception_type else ""
-        reasons = [f"the repro hit the reported symptom ({hit}{extraction.symptom.quote if extraction.symptom else 'as reported'}) inside the package"]
+    # It needs a symptom quoted from the report: matching nothing proves nothing.
+    if blocked is None and extraction.symptom is not None and run.symptom_matched and run.in_package:
+        quote = extraction.symptom.quote if extraction.symptom else ""
+        hit = quote if run.exception_type is None or quote.startswith(run.exception_type) else f"{run.exception_type}: {quote}"
+        reasons = [f"the repro hit the reported symptom ({hit or run.exception_type or 'as reported'}) inside the package"]
         return Verdict(label=Label.CONFIRMED, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=1,
                        reasons=reasons + _premise_notes(premises, set()) + context)
 

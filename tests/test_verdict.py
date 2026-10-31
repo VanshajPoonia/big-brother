@@ -53,7 +53,7 @@ CRASHED_AS_REPORTED = {"exit_code": 1, "exception_type": "ValueError", "symptom_
 def test_rule_1_reproduced_is_confirmed():
     verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(**CRASHED_AS_REPORTED), TAG)
     assert (verdict.label, verdict.confidence, verdict.basis, verdict.rule) == (Label.CONFIRMED, Confidence.HIGH, Basis.EVIDENCE, 1)
-    assert "ValueError: URL too long" in verdict.reasons[0]
+    assert "(ValueError: URL too long) inside the package" in verdict.reasons[0]
 
 
 def test_rule_1_wins_over_a_wrong_minor_version_but_lists_it():
@@ -166,3 +166,9 @@ def test_no_revision_skips_rule_2():
     verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], None, None)
     assert verdict.rule == 5
     assert "no revision could be picked" in verdict.reasons
+
+
+def test_no_quoted_symptom_means_nothing_to_confirm():
+    no_symptom = EXTRACTION.model_copy(update={"symptom": None})
+    verdict = decide(no_symptom, [], ran(**CRASHED_AS_REPORTED), TAG)
+    assert verdict.label != Label.CONFIRMED

@@ -237,3 +237,4 @@ class Report(BaseModel):
     run: RunResult | None = None
     verdict: Verdict
     model_calls: list[ModelCall] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
