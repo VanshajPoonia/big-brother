@@ -55,7 +55,7 @@ def test_sends_the_schema_and_fixed_sampling():
     assert parsed.package == "tinylib"
     assert sent[0]["format"] == Extraction.model_json_schema()
     assert sent[0]["think"] is False
-    assert sent[0]["options"] == {"temperature": 0, "seed": 42}
+    assert sent[0]["options"] == {"temperature": 0, "seed": 42, "num_ctx": 8192}
     assert (call.prompt_tokens, call.output_tokens, call.duration_s, call.attempts) == (10, 5, 2.0, 1)
 
 

@@ -21,6 +21,8 @@ from bigbrother.schema import ModelCall
 
 DEFAULT_MODEL = "qwen3:4b"
 MAX_RETRIES = 2
+# Ollama's default context is small. 8k fits a long issue plus the schema and stays light on memory.
+CONTEXT_TOKENS = 8192
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -117,7 +119,7 @@ class OllamaModel(_RetryingModel):
             "format": schema.model_json_schema(),
             "stream": False,
             "think": False,
-            "options": {"temperature": 0, "seed": 42},
+            "options": {"temperature": 0, "seed": 42, "num_ctx": CONTEXT_TOKENS},
         }
         data = _post(self.client, "/api/chat", request)
         content = data.get("message", {}).get("content", "")
