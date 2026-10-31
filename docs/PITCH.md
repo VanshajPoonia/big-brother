@@ -36,9 +36,9 @@ If the live demo fails, show the saved reports in `examples/`, or rerun one with
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end.
 
-- 8 of 11 right, about a minute each.
+- 9 of 11 right, about a minute each.
 - All 4 real bugs confirmed, and every confirmed was a real bug. We never said invalid when it wasn't.
-- Real invalid reports are rarely about missing functions. That's a fake-AI-report mistake. One was a reporter whose script was named `select.py`, hiding Python's own `select` module. Their own traceback shows both their file and the error, so we catch that now. The other 3 were misunderstandings and an old install, and we still miss them.
+- Real invalid reports are rarely about missing functions. That's a fake-AI-report mistake. One was a reporter whose script was named `select.py`, hiding Python's own `select` module. Their own traceback shows both their file and the error, so we catch that now. Another said Rich's `Console` has no `save_svg`. We found it in Rich's source, and git history shows it shipped in 12.1.0, four months before the report: their install was old. The last 2 were a misunderstanding and a feature request, and we still miss them.
 - Reporters often forget an import in their snippet. Qwen now repairs it once, and if it only added imports we still count it as the reporter's code. On toolz #99 the repair imported a function the reporter had only proposed, so we check every name it adds against the real source first. That bug from 2013 is now confirmed.
 - We also tried letting Qwen tag feature requests. It called all 11 reports bugs, so we dropped it rather than let the model guess.
 
@@ -62,10 +62,10 @@ The issue is marked as untrusted data in the prompt and can't close its own bloc
 Docker with no network, a read-only filesystem, no capabilities, a non-root user, and limits on memory, processes and time. Installing has network access, running doesn't.
 
 **How accurate is it?**
-8 of 11 on real closed issues. All 4 real bugs confirmed, confirmed is never wrong, and false invalid is zero. It catches 1 of 4 real invalid reports.
+9 of 11 on real closed issues. All 4 real bugs confirmed, confirmed is never wrong, and false invalid is zero. It catches 2 of 4 real invalid reports.
 
 **What does it get wrong?**
-Invalid reports that are misunderstandings or old versions. We'd rather say cannot reproduce than call a real bug invalid. Wrong-output bugs only confirm at medium, and only from the reporter's own code. Python only.
+Invalid reports that are misunderstandings or feature requests. We'd rather say cannot reproduce than call a real bug invalid. Wrong-output bugs only confirm at medium, and only from the reporter's own code. Python only.
 
 **What if the install fails?**
 It says so and falls back to cannot reproduce, marked as a fallback. One flag changes that fallback label.
