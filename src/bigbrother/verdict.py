@@ -8,6 +8,8 @@ Rules are tried top to bottom and the first one that fits wins:
 2. A central premise is absent: invalid, high (medium when the revision is a date guess).
    Or the report's own traceback shows the reporter's file standing in for a real module,
    like a script named select.py: invalid, medium.
+   Or the report says a name is missing that the package already shipped before the report,
+   so the reporter's install is older: invalid, medium.
 3. The repro ran cleanly against the checked-out package: cannot reproduce, medium
    (high when it was the reporter's own code).
 4. The repro failed some other way: cannot reproduce, low.
@@ -26,6 +28,7 @@ from bigbrother.schema import (
     ExecutionStatus,
     Extraction,
     Label,
+    OldInstall,
     PremiseResult,
     ReproScript,
     Revision,
@@ -100,6 +103,7 @@ def decide(
     *,
     repro: ReproScript | None = None,
     shadowing: Shadowing | None = None,
+    old_install: OldInstall | None = None,
     blocked_label: Label = Label.CANNOT_REPRODUCE,
 ) -> Verdict:
     context = _revision_note(revision)
@@ -146,6 +150,17 @@ def decide(
         reasons = [
             f"the report's own traceback shows the reporter's file {shadowing.path} loaded in place of "
             f"the module {shadowing.module!r} ({shadowing.quote}), so the error comes from the file name"
+        ]
+        return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=2,
+                       reasons=reasons + _premise_notes(premises, set()) + context)
+
+    # Rule 2, third case: the "missing" name had already shipped, so the reporter's install is older.
+    if old_install is not None:
+        o = old_install
+        reasons = [
+            f"the report says {o.owner} has no {o.name}, but it's defined at {o.path}:{o.line} (`{o.text}`) "
+            f"and first shipped in {o.added_in} on {o.released:%d %b %Y}, before the report, "
+            f"so the reporter's install is older than that"
         ]
         return Verdict(label=Label.INVALID, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=2,
                        reasons=reasons + _premise_notes(premises, set()) + context)

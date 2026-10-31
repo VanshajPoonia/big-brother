@@ -179,3 +179,12 @@ def test_a_report_showing_a_shadowed_module_is_invalid(load_issue, tinylib_repo)
 
     assert report.shadowing.module == "random"
     assert (report.verdict.label, report.verdict.rule) == (Label.INVALID, 2)
+
+
+def test_a_report_about_a_released_function_is_an_old_install(load_issue, tinylib_repo):
+    body = "Upgraded my code and now:\n```\nAttributeError: module 'tinylib' has no attribute 'parse_query'\n```"
+    issue = load_issue("no_steps").model_copy(update={"body": body})  # filed 12 Mar 2026, after v1.1.0
+    report = check(issue, tinylib_repo.path, qwen("no_steps"), reproduce=FakeSandbox(CRASHED), **LANES)
+
+    assert report.old_install.added_in == "v1.1.0"
+    assert (report.verdict.label, report.verdict.rule) == (Label.INVALID, 2)

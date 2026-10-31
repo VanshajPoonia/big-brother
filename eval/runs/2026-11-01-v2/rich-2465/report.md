@@ -2,10 +2,10 @@
 
 https://github.com/Textualize/rich/issues/2465
 
-**cannot reproduce** (low confidence, rule 5, basis fallback)
+**invalid** (medium confidence, rule 2, basis evidence)
 
 ## Why
-- the report has no steps to run, so the label is the blocked policy (cannot reproduce), not evidence
+- the report says Console has no save_svg, but it's defined at rich/console.py:2479 (`def save_svg(`) and first shipped in v12.1.0 on 03 Apr 2022, before the report, so the reporter's install is older than that
 - checked at 90a7224ee672 origin/main, picked from the issue date
 
 ## What the report relies on

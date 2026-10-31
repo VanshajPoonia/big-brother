@@ -82,12 +82,12 @@
     "duration_s": 0.0
   },
   "verdict": {
-    "label": "cannot reproduce",
-    "confidence": "low",
-    "basis": "fallback",
-    "rule": 5,
+    "label": "invalid",
+    "confidence": "medium",
+    "basis": "evidence",
+    "rule": 2,
     "reasons": [
-      "the report has no steps to run, so the label is the blocked policy (cannot reproduce), not evidence",
+      "the report says Console has no save_svg, but it's defined at rich/console.py:2479 (`def save_svg(`) and first shipped in v12.1.0 on 03 Apr 2022, before the report, so the reporter's install is older than that",
       "checked at 90a7224ee672 origin/main, picked from the issue date"
     ]
   },
@@ -259,27 +259,37 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T21:08:41.55187Z",
+        "created_at": "2026-10-31T21:42:53.947235Z",
         "message": {
           "role": "assistant",
           "content": "{\n  \"central_claim\": \"The console has no attribute save_svg\",\n  \"has_steps\": true,\n  \"package\": \"rich\",\n  \"claimed_version\": \"0.18.1\",\n  \"premises\": [\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"rich.console.Console\",\n      \"central\": true\n    },\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"rich.console.Console.save_svg\",\n      \"central\": true\n    }\n  ],\n  \"symptom\": {\n    \"kind\": \"exception\",\n    \"quote\": \"AttributeError: 'Console' object has no attribute 'save_svg'\",\n    \"exception_type\": \"AttributeError\"\n  }\n}"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 18768739250,
-        "load_duration": 2584250,
+        "total_duration": 26613097084,
+        "load_duration": 5270524459,
         "prompt_eval_count": 771,
-        "prompt_eval_cached_count": 404,
-        "prompt_eval_duration": 3804592000,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 7978082000,
         "eval_count": 150,
-        "eval_duration": 14850470000
+        "eval_duration": 13288748000
       },
       "attempts": 1,
       "prompt_tokens": 771,
       "output_tokens": 150,
-      "duration_s": 18.76873925
+      "duration_s": 26.613097084
     }
   ],
+  "shadowing": null,
+  "old_install": {
+    "owner": "Console",
+    "name": "save_svg",
+    "path": "rich/console.py",
+    "line": 2479,
+    "text": "def save_svg(",
+    "added_in": "v12.1.0",
+    "released": "2022-04-03T14:48:15+01:00"
+  },
   "notes": [
     "dropped the symptom, its quote isn't in the report: \"AttributeError: 'Console' object has no attribute 'save_svg'\"",
     "dropped claimed version '0.18.1', the report doesn't mention it",

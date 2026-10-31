@@ -8,6 +8,7 @@ from bigbrother.schema import (
     Excerpt,
     Extraction,
     Label,
+    OldInstall,
     Premise,
     PremiseResult,
     ReproScript,
@@ -216,3 +217,18 @@ def test_a_real_reproduction_beats_shadowing():
 def test_shadowing_needs_no_run_at_all():
     verdict = decide(EXTRACTION.model_copy(update={"has_steps": False}), [], None, TAG, shadowing=SHADOWED)
     assert (verdict.label, verdict.basis) == (Label.INVALID, Basis.EVIDENCE)
+
+
+OLD = OldInstall(owner="Console", name="save_svg", path="rich/console.py", line=2479, text="def save_svg(",
+                 added_in="v12.1.0", released="2022-04-03T14:48:15+01:00")
+
+
+def test_an_old_install_is_invalid_at_medium():
+    verdict = decide(EXTRACTION.model_copy(update={"has_steps": False}), [], None, TAG, old_install=OLD)
+    assert (verdict.label, verdict.confidence, verdict.rule, verdict.basis) == (Label.INVALID, Confidence.MEDIUM, 2, Basis.EVIDENCE)
+    assert "defined at rich/console.py:2479" in verdict.reasons[0]
+    assert "first shipped in v12.1.0 on 03 Apr 2022" in verdict.reasons[0]
+
+
+def test_a_real_reproduction_beats_an_old_install():
+    assert decide(EXTRACTION, [], ran(**CRASHED_AS_REPORTED), TAG, old_install=OLD).label == Label.CONFIRMED

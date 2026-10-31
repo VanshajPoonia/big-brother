@@ -71,3 +71,6 @@ On toolz #99 Qwen's repair imported `clojure_update_in`, a function the reporter
 **1 Nov, 3:00 AM. Catch a reporter's file hiding a real module.**
 On tqdm #1477 the reporter's script was named `select.py`, so Python loaded it instead of the standard `select` module and tqdm looked broken. The report's own traceback shows both facts: a frame from the reporter's `select.py` outside any installed library, and `module 'select' has no attribute 'select'`. Both have to be there, so a hint alone (arrow #1154 says "partially initialized module 'arrow'" but shows no file) isn't enough. It needs no model. A real reproduction still wins. First real invalid caught: 8 of 11.
 
+**1 Nov, 3:15 AM. Catch reports from an old install.**
+rich #2465 says "Console has no attribute save_svg". At the code from the issue date, `Console.save_svg` is defined in `rich/console.py`, and git history shows it first shipped in 12.1.0 on 3 Apr 2022, four months before the report. Rich's changelog agrees, and the maintainer told the reporter to upgrade. The check needs every step to hold: the report names the owner, that same class or module defines the name, the release came out before the report, and a version the reporter gave is older than that release. It needs no model, and a real reproduction still wins. 9 of 11.
+

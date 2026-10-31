@@ -14,6 +14,7 @@ from bigbrother.extract import extract
 from bigbrother.extract.code import reporter_script
 from bigbrother.extract.model import Model, ModelError
 from bigbrother.extract.repair import broke_on_its_own, repair
+from bigbrother.old_install import find_old_install
 from bigbrother.shadowing import find_shadowing
 from bigbrother.schema import (
     CheckState,
@@ -121,6 +122,15 @@ def check(
     # 2c. Does the report's own traceback show the reporter's file hiding a real module?
     shadowing = find_shadowing(issue.text, extraction.package)
 
+    # 2d. Does the report call something missing that had already shipped? Then it's an old install.
+    old_install = None
+    if revision is not None:
+        try:
+            old_install = find_old_install(issue.text, repo_dir, revision, extraction.package,
+                                           extraction.claimed_version, issue.created_at)
+        except (OSError, ValueError, SyntaxError, subprocess.SubprocessError) as error:
+            notes.append(f"couldn't check for an old install: {error}")
+
     # 3. Do the functions and versions it relies on exist there?
     premises = []
     if revision is not None and extraction.premises:
@@ -168,7 +178,8 @@ def check(
                 notes.append(f"the sandbox failed: {error}")
 
     # 5. Fixed rules pick the label.
-    verdict = decide(extraction, premises, run, revision, repro=script, shadowing=shadowing, blocked_label=blocked_label)
+    verdict = decide(extraction, premises, run, revision, repro=script, shadowing=shadowing,
+                     old_install=old_install, blocked_label=blocked_label)
 
     return Report(
         tool_version=__version__,
@@ -182,5 +193,6 @@ def check(
         verdict=verdict,
         model_calls=calls,
         shadowing=shadowing,
+        old_install=old_install,
         notes=notes,
     )

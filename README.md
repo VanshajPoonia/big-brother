@@ -53,9 +53,9 @@ The maintainers fixed it in 4.4.0.
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end. The latest run is in [eval/runs/2026-11-01-v2/results.md](eval/runs/2026-11-01-v2/results.md):
 
-- 8 of 11 right, about a minute per issue.
+- 9 of 11 right, about a minute per issue.
 - All 4 real bugs confirmed, and every `confirmed` was a real bug. It never said `invalid` when it wasn't.
-- 1 of 4 real `invalid` reports caught: the reporter's script was named `select.py`, hiding Python's own `select` module, and their traceback shows it. The other 3 were misunderstandings and an old install.
+- 2 of 4 real `invalid` reports caught. In one, the reporter's script was named `select.py`, hiding Python's own `select` module, and their traceback shows it. In the other, the "missing" `Console.save_svg` had shipped in Rich 12.1.0 months before the report, so their install was older. The other 2 were a misunderstanding and a feature request.
 
 Each mistake is in the table with the reason the tool gave.
 
@@ -71,7 +71,7 @@ Each mistake is in the table with the reason the tool gave.
 
 - Python packages only.
 - Wrong-output bugs confirm at medium at most, and only from the reporter's own code.
-- `invalid` means something the report relies on doesn't exist, or the reporter's own file hid a real module. Reports that are invalid because of a misunderstanding or an old install aren't caught.
+- `invalid` means something the report relies on doesn't exist, the reporter's own file hid a real module, or what they call missing had already shipped. Misunderstandings and feature requests aren't caught.
 - Pull requests aren't checked yet.
 
 ## Contributing
