@@ -1,0 +1,137 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/4075",
+    "repo": "Textualize/rich",
+    "number": 4075,
+    "title": "empty with end",
+    "base_sha": "1fc7cb210ae52eb099df39818ddb9569e5b14c7b",
+    "head_sha": "eccb5945ddb8487d655d2ab54f3443d072ef4247"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_console.py fails without the change (1 failed, 99 passed in 0.68s) and passes with it (100 passed in 0.61s), so the PR's tests check the change",
+    "`Console.print` (rich/console.py:1652) changed, and a test this PR adds or changes uses it at tests/test_console.py:197",
+    "`Console.save_text` (rich/console.py:2224) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_console.py:580, but they were written before this change",
+    "the PR changes 1 test file: tests/test_console.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/console.py",
+      "name": "Console.print",
+      "line": 1652,
+      "changed_lines": 4,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 197,
+          "text": "console.print(end=\"!\")",
+          "in_pr": true
+        },
+        {
+          "path": "tests/render.py",
+          "line": 22,
+          "text": "console.print(renderable, no_wrap=no_wrap)",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_align.py",
+          "line": 37,
+          "text": "console.print(Align(\"foo\", \"left\"))",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/console.py",
+      "name": "Console.save_text",
+      "line": 2224,
+      "changed_lines": 7,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 580,
+          "text": "console.save_text(export_path)",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_console.py"
+  ],
+  "outside_functions": [
+    "rich/console.py: 2 changed lines outside any function"
+  ],
+  "tests_run": [
+    "tests/test_console.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................................................................ [ 72%]\n............................                                             [100%]\n100 passed in 0.61s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar eccb5945ddb8487d655d2ab54f3443d072ef4247",
+      "docker volume create bb-a2396ed0f973-deps",
+      "docker run --name bb-a2396ed0f973-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-hklzuct3/src,target=/src --mount type=volume,source=bb-a2396ed0f973-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-c2388e09f8b84e59ac801057587e607d; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-a2396ed0f973-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-hklzuct3/src,target=/src,readonly --mount type=volume,source=bb-a2396ed0f973-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_console.py",
+      "docker rm -f bb-a2396ed0f973-install bb-a2396ed0f973-tests",
+      "docker volume rm -f bb-a2396ed0f973-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 5.52
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": ".................F...................................................... [ 72%]\n............................                                             [100%]\n=================================== FAILURES ===================================\n__________________________ test_print_empty_with_end ___________________________\n\n    def test_print_empty_with_end() -> None:\n        console = Console(file=io.StringIO(), color_system=\"truecolor\")\n        console.print(end=\"!\")\n>       assert console.file.getvalue() == \"!\"\nE       AssertionError: assert '\\n' == '!'\nE         \nE         Strings contain only whitespace, escaping them using repr()\nE         - '!'\nE         + '\\n'\n\ntests/test_console.py:198: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_console.py::test_print_empty_with_end - AssertionError: ass...\n1 failed, 99 passed in 0.68s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 1fc7cb210ae52eb099df39818ddb9569e5b14c7b",
+      "docker volume create bb-b429134e18c6-deps",
+      "docker run --name bb-b429134e18c6-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-hicoj81u/src,target=/src --mount type=volume,source=bb-b429134e18c6-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-7539f284229d48f4b15a1abfa177e934; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-b429134e18c6-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-hicoj81u/src,target=/src,readonly --mount type=volume,source=bb-b429134e18c6-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_console.py",
+      "docker rm -f bb-b429134e18c6-install bb-b429134e18c6-tests",
+      "docker volume rm -f bb-b429134e18c6-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 5.59
+  }
+}

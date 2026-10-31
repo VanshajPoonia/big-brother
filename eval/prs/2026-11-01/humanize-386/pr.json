@@ -1,0 +1,22 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/386",
+    "repo": "python-humanize/humanize",
+    "number": 386,
+    "title": "Update dependency mypy to v2.3.1",
+    "base_sha": "b48b37b187682ccc55b28ed1b7cfaa853dbca72f",
+    "head_sha": "1b99db3fc8c7563499b082550134bb80cb69e8ca"
+  },
+  "label": "no function changed",
+  "reasons": [
+    "no function in the package's code changed, only lines outside functions or no code at all",
+    "the PR changes 0 test files"
+  ],
+  "functions": [],
+  "tests_changed": [],
+  "outside_functions": [],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}

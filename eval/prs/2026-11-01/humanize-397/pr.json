@@ -1,0 +1,51 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/397",
+    "repo": "python-humanize/humanize",
+    "number": 397,
+    "title": "Defer importing `math` in `filesize.py`",
+    "base_sha": "3201e702ed7eae506f793fad0aec204f387aeb4c",
+    "head_sha": "d6913190a3097cd7bf4f22a4e7e45a9599383c37"
+  },
+  "label": "no test for this change",
+  "reasons": [
+    "`naturalsize` (src/humanize/filesize.py:38) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_benchmarks.py:65, but they were written before this change",
+    "the PR changes 0 test files"
+  ],
+  "functions": [
+    {
+      "path": "src/humanize/filesize.py",
+      "name": "naturalsize",
+      "line": 38,
+      "changed_lines": 2,
+      "mentions": [
+        {
+          "path": "tests/test_benchmarks.py",
+          "line": 65,
+          "text": "benchmark(humanize.naturalsize, 1_234_567_890)",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_filesize.py",
+          "line": 97,
+          "text": "assert humanize.naturalsize(*test_args) == expected",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_filesize.py",
+          "line": 105,
+          "text": "assert humanize.naturalsize(*test_args) == \"-\" + expected",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [],
+  "outside_functions": [
+    "src/humanize/filesize.py: 1 changed line outside any function"
+  ],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}

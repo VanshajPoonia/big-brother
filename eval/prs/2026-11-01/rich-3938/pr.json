@@ -1,0 +1,160 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3938",
+    "repo": "Textualize/rich",
+    "number": 3938,
+    "title": "fix background style with soft wrap",
+    "base_sha": "05ff970926cbd0b5d0acb6fc18cdbd1fc971e582",
+    "head_sha": "2c247e6da72dfa69dd6148f1a0657e2440d1ebe9"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_segment.py, tests/test_text.py fail without the change (3 failed, 171 passed in 0.26s) and pass with it (174 passed in 0.24s), so the PR's tests check the change",
+    "`Console.print` (rich/console.py:1648) changed, and a test this PR adds or changes uses it at tests/test_text.py:1122",
+    "`Segment.split_lines_terminator` (rich/segment.py:279) changed, and a test this PR adds or changes uses it at tests/test_segment.py:39",
+    "`Segment.split_and_crop_lines` (rich/segment.py:310) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_segment.py:54, but they were written before this change",
+    "the PR changes 2 test files: tests/test_segment.py, tests/test_text.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/console.py",
+      "name": "Console.print",
+      "line": 1648,
+      "changed_lines": 9,
+      "mentions": [
+        {
+          "path": "tests/test_text.py",
+          "line": 1122,
+          "text": "console.print(\"soft wrap is on\", style=\"blue on white\", soft_wrap=True)",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_text.py",
+          "line": 1123,
+          "text": "console.print(\"Next line\")",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_text.py",
+          "line": 1126,
+          "text": "print(repr(output))",
+          "in_pr": true
+        }
+      ]
+    },
+    {
+      "path": "rich/segment.py",
+      "name": "Segment.split_lines_terminator",
+      "line": 279,
+      "changed_lines": 29,
+      "mentions": [
+        {
+          "path": "tests/test_segment.py",
+          "line": 39,
+          "text": "assert list(Segment.split_lines_terminator(lines)) == [",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_segment.py",
+          "line": 47,
+          "text": "assert list(Segment.split_lines_terminator(lines)) == [",
+          "in_pr": true
+        }
+      ]
+    },
+    {
+      "path": "rich/segment.py",
+      "name": "Segment.split_and_crop_lines",
+      "line": 310,
+      "changed_lines": 1,
+      "mentions": [
+        {
+          "path": "tests/test_segment.py",
+          "line": 54,
+          "text": "Segment.split_and_crop_lines([Segment(\"Hello\\nWorld!\\n\"), Segment(\"foo\")], 4)",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_segment.py",
+    "tests/test_text.py"
+  ],
+  "outside_functions": [
+    "rich/segment.py: 1 changed line outside any function"
+  ],
+  "tests_run": [
+    "tests/test_segment.py",
+    "tests/test_text.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................................................................ [ 41%]\n........................................................................ [ 82%]\n..............................                                           [100%]\n174 passed in 0.24s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 2c247e6da72dfa69dd6148f1a0657e2440d1ebe9",
+      "docker volume create bb-14f5f55f905c-deps",
+      "docker run --name bb-14f5f55f905c-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-qacrdh3x/src,target=/src --mount type=volume,source=bb-14f5f55f905c-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-f4d2fe9d7ab3423a9d2454be0fb9fc54; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-14f5f55f905c-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-qacrdh3x/src,target=/src,readonly --mount type=volume,source=bb-14f5f55f905c-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_segment.py tests/test_text.py",
+      "docker rm -f bb-14f5f55f905c-install bb-14f5f55f905c-tests",
+      "docker volume rm -f bb-14f5f55f905c-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.54
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": "....FF.................................................................. [ 41%]\n........................................................................ [ 82%]\n.............................F                                           [100%]\n=================================== FAILURES ===================================\n_________________________ test_split_lines_terminator __________________________\n\n    def test_split_lines_terminator():\n        lines = [Segment(\"Hello\\nWorld\")]\n>       assert list(Segment.split_lines_terminator(lines)) == [\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            ([Segment(\"Hello\")], True),\n            ([Segment(\"World\")], False),\n        ]\nE       AttributeError: type object 'Segment' has no attribute 'split_lines_terminator'\n\ntests/test_segment.py:39: AttributeError\n___________________ test_split_lines_terminator_single_line ____________________\n\n    def test_split_lines_terminator_single_line():\n        lines = [Segment(\"Hello\")]\n>       assert list(Segment.split_lines_terminator(lines)) == [\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            ([Segment(\"Hello\")], False),\n        ]\nE       AttributeError: type object 'Segment' has no attribute 'split_lines_terminator'\n\ntests/test_segment.py:47: AttributeError\n____________________________ test_soft_wrap_styled _____________________________\n\n    def test_soft_wrap_styled() -> None:\n        \"\"\"Regression test for https://github.com/Textualize/rich/issues/3838\n    \n        If soft_wrap is True and a style is set, we don't want to style the new lines.\n        \"\"\"\n        console = Console(color_system=\"standard\", width=80, force_terminal=True)\n        with console.capture() as capture:\n            console.print(\"soft wrap is on\", style=\"blue on white\", soft_wrap=True)\n            console.print(\"Next line\")\n    \n        output = capture.get()\n        print(repr(output))\n        # Background is reset before \\n\n        expected = \"\\x1b[34;47msoft wrap is on\\x1b[0m\\nNext line\\n\"\n>       assert output == expected\nE       AssertionError: assert '\\x1b[34;47ms...0mNext line\\n' == '\\x1b[34;47ms...\\nNext line\\n'\nE         \nE         - \u001b[34;47msoft wrap is on\u001b[0m\nE         + \u001b[34;47msoft wrap is on\u001b[0m\u001b[34;47m\nE         ?                            ++++++++\nE         - Next line\nE         + \u001b[0mNext line\nE         ? ++++\n\ntests/test_text.py:1129: AssertionError\n----------------------------- Captured stdout call -----------------------------\n'\\x1b[34;47msoft wrap is on\\x1b[0m\\x1b[34;47m\\n\\x1b[0mNext line\\n'\n=========================== short test summary info ============================\nFAILED tests/test_segment.py::test_split_lines_terminator - AttributeError: t...\nFAILED tests/test_segment.py::test_split_lines_terminator_single_line - Attri...\nFAILED tests/test_text.py::test_soft_wrap_styled - AssertionError: assert '\\x...\n3 failed, 171 passed in 0.26s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 05ff970926cbd0b5d0acb6fc18cdbd1fc971e582",
+      "docker volume create bb-eb20a017934e-deps",
+      "docker run --name bb-eb20a017934e-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-emofrxfg/src,target=/src --mount type=volume,source=bb-eb20a017934e-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-bd36de92c32f4d028263b0eee3005d53; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-eb20a017934e-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-emofrxfg/src,target=/src,readonly --mount type=volume,source=bb-eb20a017934e-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_segment.py tests/test_text.py",
+      "docker rm -f bb-eb20a017934e-install bb-eb20a017934e-tests",
+      "docker volume rm -f bb-eb20a017934e-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.45
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/4079",
+    "repo": "Textualize/rich",
+    "number": 4079,
+    "title": "Inline table code",
+    "base_sha": "19c67b9a3479841e9133bea94607c89ee931d3fc",
+    "head_sha": "cf3b5a16f7a76b2e8c4921d3314021bb72a6c5c1"
+  },
+  "label": "no test for this change",
+  "reasons": [
+    "tests/test_markdown.py fails at the PR's head in the sandbox (1 failed, 7 passed in 0.26s). That can be the PR, or a dependency version different from the project's own CI, so it doesn't decide the label",
+    "`TableDataElement.on_text` (rich/markdown.py:333) changed, and no test uses it at all",
+    "the PR changes 1 test file: tests/test_markdown.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/markdown.py",
+      "name": "TableDataElement.on_text",
+      "line": 333,
+      "changed_lines": 4,
+      "mentions": []
+    }
+  ],
+  "tests_changed": [
+    "tests/test_markdown.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_markdown.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": ".......F                                                                 [100%]\n=================================== FAILURES ===================================\n_______________________ test_inline_code_in_table_cells ________________________\n\n    def test_inline_code_in_table_cells() -> None:\n        \"\"\"Test inline code in table cells.\n    \n        Regression test for https://github.com/Textualize/rich/issues/4038\n    \n        \"\"\"\n        markdown = Markdown(\n            \"| Col |\\n|---|\\n| `print('hello');` |\\n\",\n            inline_code_theme=\"monokai\",\n            inline_code_lexer=\"python\",\n        )\n        result = render(markdown)\n        expected = \"\\n\\x1b[36m                 \\x1b[0m\\n\\x1b[36m \\x1b[0m\\x1b[36mCol\\x1b[0m\\x1b[1m            \\x1b[0m\\x1b[36m \\x1b[0m\\n\\x1b[36m ─────────────── \\x1b[0m\\n\\x1b[36m \\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34mprint\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m(\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34m'\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34mhello\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34m'\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m)\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m;\\x1b[0m\\x1b[36m \\x1b[0m\\n\\x1b[36m                 \\x1b[0m\\n\"\n>       assert result == expected\nE       AssertionError: assert '\\n\\x1b[36m  ...    \\x1b[0m\\n' == '\\n\\x1b[36m  ...    \\x1b[0m\\n'\nE         \nE         Skipping 115 identical leading characters in diff, use -v to show\nE         - [0m\u001b[38;2;248;248;242;48;2;39;40;34mprint\u001b[0m\u001b[38;2;248;248;242;48;2;39;40;34m(\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34m'\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34mhello\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34m'\u001b[0m\u001b[38;2;248;248;242;48;2;39;40;34m)\u001b[0m\u001b[38;2;248;248;242;48;2;39;40;34m;\u001b[0m\u001b[36m \u001b[0m\nE         ?           ^^^^^^^^^^^\nE         + [0m\u001b[38;2;166;226;46;48;2;39;40;34mprint\u001b[0m\u001b[38;2;248;248;242;48;2;39;40;34m(\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34m'\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34mhello\u001b[0m\u001b[38;2;230;219;116;48;2;39;40;34m'\u001b...\nE         \nE         ...Full output truncated, use '-vv' to show\n\ntests/test_markdown.py:215: AssertionError\n----------------------------- Captured stdout call -----------------------------\n\"\\n\\x1b[36m                 \\x1b[0m\\n\\x1b[36m \\x1b[0m\\x1b[36mCol\\x1b[0m\\x1b[1m            \\x1b[0m\\x1b[36m \\x1b[0m\\n\\x1b[36m ─────────────── \\x1b[0m\\n\\x1b[36m \\x1b[0m\\x1b[38;2;166;226;46;48;2;39;40;34mprint\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m(\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34m'\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34mhello\\x1b[0m\\x1b[38;2;230;219;116;48;2;39;40;34m'\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m)\\x1b[0m\\x1b[38;2;248;248;242;48;2;39;40;34m;\\x1b[0m\\x1b[36m \\x1b[0m\\n\\x1b[36m                 \\x1b[0m\\n\"\n=========================== short test summary info ============================\nFAILED tests/test_markdown.py::test_inline_code_in_table_cells - AssertionErr...\n1 failed, 7 passed in 0.26s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar cf3b5a16f7a76b2e8c4921d3314021bb72a6c5c1",
+      "docker volume create bb-edea2a5fc59b-deps",
+      "docker run --name bb-edea2a5fc59b-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-k6ezdge_/src,target=/src --mount type=volume,source=bb-edea2a5fc59b-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-7d4304f52f0f429ab1404fe0e1f65c06; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-edea2a5fc59b-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-k6ezdge_/src,target=/src,readonly --mount type=volume,source=bb-edea2a5fc59b-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_markdown.py",
+      "docker rm -f bb-edea2a5fc59b-install bb-edea2a5fc59b-tests",
+      "docker volume rm -f bb-edea2a5fc59b-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 5.21
+  },
+  "base_run": null
+}

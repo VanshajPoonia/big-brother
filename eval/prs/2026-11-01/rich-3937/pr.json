@@ -1,0 +1,147 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3937",
+    "repo": "Textualize/rich",
+    "number": 3937,
+    "title": "don't strip whitespace when soft_wrap is True",
+    "base_sha": "05a6b9b17a7c778756187f15d6d4bf693db6345f",
+    "head_sha": "4d0cbb74a8cc5c7dd9af3056499a43efbd13355a"
+  },
+  "label": "partly tested",
+  "reasons": [
+    "tests/test_text.py passes with and without the change (112 passed in 0.20s), so it doesn't show the change is tested",
+    "`Text.__rich_console__` (rich/text.py:689) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_console.py:494, but they were written before this change",
+    "`Text.wrap` (rich/text.py:1201) changed, and a test this PR adds or changes uses it at tests/test_text.py:1100",
+    "the PR changes 1 test file: tests/test_text.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/text.py",
+      "name": "Text.__rich_console__",
+      "line": 689,
+      "changed_lines": 1,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 494,
+          "text": "def __rich_console__(self, console, options):",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_console.py",
+          "line": 888,
+          "text": "def __rich_console__(self, console, options):",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_containers.py",
+          "line": 34,
+          "text": "result = list(lines.__rich_console__(console, console.options))",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/text.py",
+      "name": "Text.wrap",
+      "line": 1201,
+      "changed_lines": 5,
+      "mentions": [
+        {
+          "path": "tests/test_text.py",
+          "line": 1100,
+          "text": "Soft wrap should not strip trailing whitespace.",
+          "in_pr": true
+        },
+        {
+          "path": "tests/_card_render.py",
+          "line": 1,
+          "text": "expected = \"\\x1b[3m                                           Rich features                                            \\x1b[0m\\n\\x1b[1;31m              \\x1b[0m                                         ",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_syntax.py",
+          "line": 426,
+          "text": "\"'Hello, World. This should wrap.'\",",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_text.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_text.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................................................................ [ 64%]\n........................................                                 [100%]\n112 passed in 0.20s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 4d0cbb74a8cc5c7dd9af3056499a43efbd13355a",
+      "docker volume create bb-f17c83a3b3cc-deps",
+      "docker run --name bb-f17c83a3b3cc-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-dm1qviyy/src,target=/src --mount type=volume,source=bb-f17c83a3b3cc-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-d88d713397a54ffc8560fb06532dba60; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-f17c83a3b3cc-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-dm1qviyy/src,target=/src,readonly --mount type=volume,source=bb-f17c83a3b3cc-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_text.py",
+      "docker rm -f bb-f17c83a3b3cc-install bb-f17c83a3b3cc-tests",
+      "docker volume rm -f bb-f17c83a3b3cc-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.22
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "........................................................................ [ 64%]\n........................................                                 [100%]\n112 passed in 0.20s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 05a6b9b17a7c778756187f15d6d4bf693db6345f",
+      "docker volume create bb-f12f1abecaae-deps",
+      "docker run --name bb-f12f1abecaae-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-v250e9uf/src,target=/src --mount type=volume,source=bb-f12f1abecaae-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-076f17b57cfb44e6ad01d52e6921de03; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-f12f1abecaae-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-v250e9uf/src,target=/src,readonly --mount type=volume,source=bb-f12f1abecaae-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_text.py",
+      "docker rm -f bb-f12f1abecaae-install bb-f12f1abecaae-tests",
+      "docker volume rm -f bb-f12f1abecaae-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.31
+  }
+}

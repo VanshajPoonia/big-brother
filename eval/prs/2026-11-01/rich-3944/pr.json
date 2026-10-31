@@ -1,0 +1,114 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3944",
+    "repo": "Textualize/rich",
+    "number": 3944,
+    "title": "fix fonts",
+    "base_sha": "36fe3f7ca9becca4777861d5e6e625f5a4a37545",
+    "head_sha": "2e5a5dad304b59d75aa4b4ed6cae031693e3615e"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_cells.py fails without the change (1 failed, 53 passed in 0.05s) and passes with it (54 passed in 0.04s), so the PR's tests check the change",
+    "`get_character_cell_size` (rich/cells.py:47) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_cells.py:13, but they were written before this change",
+    "the PR changes 1 test file: tests/test_cells.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/cells.py",
+      "name": "get_character_cell_size",
+      "line": 47,
+      "changed_lines": 1,
+      "mentions": [
+        {
+          "path": "tests/test_cells.py",
+          "line": 13,
+          "text": "get_character_cell_size,",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_cells.py",
+          "line": 31,
+          "text": "assert get_character_cell_size(character) == size",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_cells.py"
+  ],
+  "outside_functions": [],
+  "tests_run": [
+    "tests/test_cells.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "......................................................                   [100%]\n54 passed in 0.04s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 2e5a5dad304b59d75aa4b4ed6cae031693e3615e",
+      "docker volume create bb-bb815c8351fd-deps",
+      "docker run --name bb-bb815c8351fd-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-324sw1pt/src,target=/src --mount type=volume,source=bb-bb815c8351fd-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-3206de815747451792775d58d0aaab00; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-bb815c8351fd-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-324sw1pt/src,target=/src,readonly --mount type=volume,source=bb-bb815c8351fd-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_cells.py",
+      "docker rm -f bb-bb815c8351fd-install bb-bb815c8351fd-tests",
+      "docker volume rm -f bb-bb815c8351fd-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.25
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": ".....................................................F                   [100%]\n=================================== FAILURES ===================================\n________________________________ test_nerd_font ________________________________\n\n    def test_nerd_font():\n        \"\"\"Regression test for https://github.com/Textualize/rich/issues/3943\"\"\"\n        # Not allocated by unicode, but used by nerd fonts\n>       assert cell_len(\"\\U000f024d\") == 1\nE       AssertionError: assert 0 == 1\nE        +  where 0 = cell_len('\\U000f024d')\n\ntests/test_cells.py:189: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_cells.py::test_nerd_font - AssertionError: assert 0 == 1\n1 failed, 53 passed in 0.05s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 36fe3f7ca9becca4777861d5e6e625f5a4a37545",
+      "docker volume create bb-a34e1f4f81d4-deps",
+      "docker run --name bb-a34e1f4f81d4-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-hbbj_8bq/src,target=/src --mount type=volume,source=bb-a34e1f4f81d4-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-f85b5580d66941bc8b685033bdd310e9; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-a34e1f4f81d4-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-hbbj_8bq/src,target=/src,readonly --mount type=volume,source=bb-a34e1f4f81d4-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_cells.py",
+      "docker rm -f bb-a34e1f4f81d4-install bb-a34e1f4f81d4-tests",
+      "docker volume rm -f bb-a34e1f4f81d4-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 3.17
+  }
+}

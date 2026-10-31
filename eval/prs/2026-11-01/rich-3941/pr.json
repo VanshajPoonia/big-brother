@@ -1,0 +1,69 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3941",
+    "repo": "Textualize/rich",
+    "number": 3941,
+    "title": "Fix typing for save_html, save_text, save_svg to accept PathLike",
+    "base_sha": "c595fa95068dd2c5095d25446b2f0571bc0b3995",
+    "head_sha": "31ce129a915bab47fa7ddc8e15af77480666fefe"
+  },
+  "label": "no test for this change",
+  "reasons": [
+    "`Console.save_text` (rich/console.py:2210) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_console.py:574, but they were written before this change",
+    "`Console.save_html` (rich/console.py:2299) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_console.py:585, but they were written before this change",
+    "`Console.save_svg` (rich/console.py:2581) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_console.py:564, but they were written before this change",
+    "the PR changes 0 test files"
+  ],
+  "functions": [
+    {
+      "path": "rich/console.py",
+      "name": "Console.save_text",
+      "line": 2210,
+      "changed_lines": 2,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 574,
+          "text": "console.save_text(export_path)",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/console.py",
+      "name": "Console.save_html",
+      "line": 2299,
+      "changed_lines": 2,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 585,
+          "text": "console.save_html(export_path)",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/console.py",
+      "name": "Console.save_svg",
+      "line": 2581,
+      "changed_lines": 2,
+      "mentions": [
+        {
+          "path": "tests/test_console.py",
+          "line": 564,
+          "text": "console.save_svg(export_path)",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [],
+  "outside_functions": [
+    "rich/console.py: 1 changed line outside any function"
+  ],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}

@@ -1,0 +1,122 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/4077",
+    "repo": "Textualize/rich",
+    "number": 4077,
+    "title": "proxy isatty",
+    "base_sha": "58ac15120fe254886c10d6253667733c83604cb4",
+    "head_sha": "494b795031782c694297d2db78bd04fb8c82f590"
+  },
+  "label": "tested",
+  "reasons": [
+    "tests/test_file_proxy.py fails without the change (1 failed, 3 passed in 0.14s) and passes with it (4 passed in 0.14s), so the PR's tests check the change",
+    "`FileProxy.isatty` (rich/file_proxy.py:59) changed, and a test this PR adds or changes uses it at tests/test_file_proxy.py:41",
+    "the PR changes 1 test file: tests/test_file_proxy.py"
+  ],
+  "functions": [
+    {
+      "path": "rich/file_proxy.py",
+      "name": "FileProxy.isatty",
+      "line": 59,
+      "changed_lines": 2,
+      "mentions": [
+        {
+          "path": "tests/test_file_proxy.py",
+          "line": 41,
+          "text": "\"\"\"Check isatty is proxied",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_file_proxy.py",
+          "line": 48,
+          "text": "def isatty(self) -> bool:",
+          "in_pr": true
+        },
+        {
+          "path": "tests/test_file_proxy.py",
+          "line": 54,
+          "text": "assert file_proxy.isatty()",
+          "in_pr": true
+        }
+      ]
+    }
+  ],
+  "tests_changed": [
+    "tests/test_file_proxy.py"
+  ],
+  "outside_functions": [
+    "rich/file_proxy.py: 1 changed line outside any function"
+  ],
+  "tests_run": [
+    "tests/test_file_proxy.py"
+  ],
+  "head_run": {
+    "status": "ran",
+    "exit_code": 0,
+    "stdout": "....                                                                     [100%]\n4 passed in 0.14s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 494b795031782c694297d2db78bd04fb8c82f590",
+      "docker volume create bb-fd932c9195e0-deps",
+      "docker run --name bb-fd932c9195e0-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-yfaag6yl/src,target=/src --mount type=volume,source=bb-fd932c9195e0-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-0b44afc2cf2f40df8d6eada52d69723c; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-fd932c9195e0-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-yfaag6yl/src,target=/src,readonly --mount type=volume,source=bb-fd932c9195e0-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_file_proxy.py",
+      "docker rm -f bb-fd932c9195e0-install bb-fd932c9195e0-tests",
+      "docker volume rm -f bb-fd932c9195e0-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 4.11
+  },
+  "base_run": {
+    "status": "ran",
+    "exit_code": 1,
+    "stdout": "...F                                                                     [100%]\n=================================== FAILURES ===================================\n_________________________________ test_isatty __________________________________\n\n    def test_isatty():\n        \"\"\"Check isatty is proxied\n    \n        Regression test for https://github.com/Textualize/rich/issues/4041\n    \n        \"\"\"\n    \n        class TTYFile:\n            def isatty(self) -> bool:\n                return True\n    \n        file = TTYFile()\n        console = Console()\n        file_proxy = FileProxy(console, file)\n>       assert file_proxy.isatty()\nE       assert False\nE        +  where False = <built-in method isatty of FileProxy object at 0xffffaaa1b7f0>()\nE        +    where <built-in method isatty of FileProxy object at 0xffffaaa1b7f0> = <rich.file_proxy.FileProxy object at 0xffffaaa1b7f0>.isatty\n\ntests/test_file_proxy.py:54: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_file_proxy.py::test_isatty - assert False\n1 failed, 3 passed in 0.14s\n",
+    "stderr": "",
+    "exception_type": null,
+    "traceback_files": [],
+    "symptom_matched": false,
+    "in_package": false,
+    "imported_from_checkout": null,
+    "commands": [
+      "docker image inspect bigbrother-sandbox:0.1",
+      "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
+      "git -C ~/.cache/bigbrother/repos/Textualize__rich archive --format=tar 58ac15120fe254886c10d6253667733c83604cb4",
+      "docker volume create bb-4cfa80abcb2a-deps",
+      "docker run --name bb-4cfa80abcb2a-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=$TMPDIR/bigbrother-b6cysu87/src,target=/src --mount type=volume,source=bb-4cfa80abcb2a-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src pytest; status=$?; if [ $status -eq 0 ]; then echo bigbrother-8f6ba74c7c9648f1b57bcda08dad9e17; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-4cfa80abcb2a-tests --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 -e PYTHONDONTWRITEBYTECODE=1 --mount type=bind,source=$TMPDIR/bigbrother-b6cysu87/src,target=/src,readonly --mount type=volume,source=bb-4cfa80abcb2a-deps,target=/deps,readonly --workdir /src bigbrother-sandbox:0.1 /deps/venv/bin/python -m pytest -q -p no:cacheprovider -o addopts= tests/test_file_proxy.py",
+      "docker rm -f bb-4cfa80abcb2a-install bb-4cfa80abcb2a-tests",
+      "docker volume rm -f bb-4cfa80abcb2a-deps"
+    ],
+    "image_digest": "sha256:79726a8e7dbd50a0ae4f71cd58240405f1ac32ba42aff5f769da4e3869bce663",
+    "python_version": "3.12.16",
+    "packages": [
+      "iniconfig==2.3.1",
+      "markdown-it-py==4.2.0",
+      "mdurl==0.1.2",
+      "packaging==26.3",
+      "pluggy==1.7.0",
+      "pygments==2.21.0",
+      "pytest==9.2.0",
+      "-e file:///src"
+    ],
+    "duration_s": 4.83
+  }
+}

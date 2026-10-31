@@ -1,0 +1,49 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/python-humanize/humanize/pull/402",
+    "repo": "python-humanize/humanize",
+    "number": 402,
+    "title": "Fix `naturaldelta` doctest",
+    "base_sha": "ffdf407fdfe1a5738159b989eb2df190ed780448",
+    "head_sha": "3829f928aa68cf30ee434975f7aba82849dcd3c2"
+  },
+  "label": "no test for this change",
+  "reasons": [
+    "`naturaldelta` (src/humanize/time.py:97) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_benchmarks.py:61, but they were written before this change",
+    "the PR changes 0 test files"
+  ],
+  "functions": [
+    {
+      "path": "src/humanize/time.py",
+      "name": "naturaldelta",
+      "line": 97,
+      "changed_lines": 3,
+      "mentions": [
+        {
+          "path": "tests/test_benchmarks.py",
+          "line": 61,
+          "text": "benchmark(humanize.naturaldelta, dt.timedelta(hours=3, minutes=27))",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_i18n.py",
+          "line": 138,
+          "text": "assert humanize.naturaldelta(seconds) == \"1,234 years\"",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_i18n.py",
+          "line": 142,
+          "text": "assert humanize.naturaldelta(seconds) == \"1 234 ans\"",
+          "in_pr": false
+        }
+      ]
+    }
+  ],
+  "tests_changed": [],
+  "outside_functions": [],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
+}
