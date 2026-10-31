@@ -4,7 +4,7 @@ Rules for everyone working on Big Brother, people and coding agents alike. Read 
 
 ## What we're building
 
-A tool that checks whether the claims in an issue or PR are true. Qwen3 8B (via Ollama) extracts claims and investigates the code. Verdicts come from fixed rules over evidence: static checks, git history and sandboxed reproduction. See [docs/DESIGN.md](docs/DESIGN.md).
+A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, with evidence. Qwen3 8B (via Ollama) extracts the claims and, when needed, writes a repro script. Labels come from fixed rules over version and symbol checks and a sandboxed run. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Hard rules
 
@@ -27,15 +27,17 @@ Only edit your own lane's folders. If you need a change somewhere else, ask that
 
 | Lane | Folders |
 | --- | --- |
-| 1 Core | `src/bigbrother/schema.py`, `harness/`, `extract/`, `verdict.py`, `cli.py` |
-| 2 Code facts | `src/bigbrother/verify/` |
-| 3 Sandbox | `src/bigbrother/sandbox/` |
-| 4 Outputs | `src/bigbrother/report/`, `src/bigbrother/github/`, `.github/workflows/` |
-| 5 Proof | `eval/`, `examples/`, `README.md` |
+| A Core | `src/bigbrother/schema.py`, `ingest/`, `extract/`, `verdict.py`, `cli.py`, `pyproject.toml`, `tests/conftest.py`, `tests/fixtures/` |
+| B Premises | `src/bigbrother/premises/` |
+| C Sandbox | `src/bigbrother/sandbox/` |
+| D Proof | `src/bigbrother/report/`, `eval/`, `examples/`, `README.md` |
+| 5th account | tests and reviews only, no feature code |
 
-`schema.py` is the contract between lanes. Only Lane 1 changes it.
+`schema.py` is the contract between lanes. Only Lane A changes it, and says so in the group chat.
 
-Tests live in `tests/`, named after the module they test.
+Each lane owns the tests for its folder, in `tests/test_<folder>*.py`. New dependencies go through Lane A.
+
+Owners and timeline are in [docs/PLAN.md](docs/PLAN.md). Write down decisions in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Writing style
 

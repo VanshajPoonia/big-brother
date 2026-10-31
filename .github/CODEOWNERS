@@ -7,7 +7,7 @@
 /.github/                      @VanshajPoonia
 /pyproject.toml                @VanshajPoonia
 /src/bigbrother/schema.py      @VanshajPoonia
-/src/bigbrother/harness/       @VanshajPoonia
+/src/bigbrother/ingest/        @VanshajPoonia
 /src/bigbrother/extract/       @VanshajPoonia
 /src/bigbrother/verdict.py     @VanshajPoonia
 /src/bigbrother/cli.py         @VanshajPoonia

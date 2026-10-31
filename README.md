@@ -31,7 +31,7 @@ Tests don't need Ollama running.
 
 ## How it works
 
-The model reads the report and digs through the code, but it never hands out verdicts. Fixed rules do that, based on what static checks, git history and a sandboxed reproduction actually show. Details in [docs/DESIGN.md](docs/DESIGN.md).
+The model reads the report and writes a repro script when there isn't one, but it never picks the label. Fixed rules do that, based on what version and symbol checks and a sandboxed run actually show. Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Contributing
 
