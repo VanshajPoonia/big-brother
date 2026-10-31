@@ -7,6 +7,9 @@
 /.github/                      @VanshajPoonia
 /pyproject.toml                @VanshajPoonia
 /src/bigbrother/schema.py      @VanshajPoonia
+/src/bigbrother/contracts.py   @VanshajPoonia
+/tests/conftest.py             @VanshajPoonia
+/tests/fixtures/               @VanshajPoonia
 /src/bigbrother/ingest/        @VanshajPoonia
 /src/bigbrother/extract/       @VanshajPoonia
 /src/bigbrother/verdict.py     @VanshajPoonia
