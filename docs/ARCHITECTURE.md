@@ -22,7 +22,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 
 | Part | Choice | Why not the alternative |
 | --- | --- | --- |
-| Model runtime | Ollama by default. `BIGBROTHER_API=openai` talks to any server with the OpenAI-style chat API (llama.cpp, LM Studio, vLLM, Ollama) | Locking to one server breaks on machines that run another |
+| Model runtime | Ollama by default. `BIGBROTHER_API=llamacpp` talks to any local server with llama.cpp's `/v1/chat/completions` API (llama.cpp, vLLM, LM Studio, Ollama) | Locking to one server breaks on machines that run another |
 | Model | `qwen3:4b` (about 2.5 GB, runs on CPU), thinking off, temperature 0, fixed seed | It only fills small schema-checked JSON and writes one short script, and rules pick the label. 8B needs about twice the memory |
 | Model calls | At most 3 per issue: extract, write a script, and one fix if the script breaks on its own | An agent loop lets the model pick actions. We don't want that, and we don't need it |
 | Schemas | Pydantic v2 | One model gives the JSON schema Ollama enforces and validates the answer. Up to 2 retries |

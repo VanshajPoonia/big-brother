@@ -11,11 +11,11 @@ A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, 
 - Never push to `main`. Branch, open a PR, get CI green and 1 approval, then merge.
 - Every commit message ends with these two lines:
   ```
-  Coding agent: <Claude Code / Codex / Copilot / none>
+  Coding agent: <Claude Code, or whichever agent you used, or none>
   Models used in project: Qwen3 4B (qwen3:4b via Ollama)
   ```
 - Fill in the PR template. Name the coding agent and the models.
-- The product only uses `qwen3:4b` through Ollama. No OpenAI, Claude, Gemini or any other cloud AI inside the code. Adding a model means updating `HACKATHON.md` in the same PR.
+- The product only uses `qwen3:4b` through Ollama. No cloud AI inside the code, only open-weight models running locally. Adding a model means updating `HACKATHON.md` in the same PR.
 - No secrets in the repo. Put them in `.env`, which is gitignored.
 - Never post issues or comments on real open-source projects. Only on our demo repo.
 - Tests must pass without Ollama. Use the fake model in tests.
@@ -30,7 +30,7 @@ Only edit your own lane's folders. If you need a change somewhere else, ask that
 | A Core (Vanshaj) | `src/bigbrother/schema.py`, `contracts.py`, `extract/`, `verdict.py`, `pipeline.py`, `cli.py`, `pyproject.toml`, `tests/conftest.py`, `tests/fixtures/` |
 | B Ingest and premises (Somya) | `src/bigbrother/ingest/`, `src/bigbrother/premises/` |
 | C Sandbox (Abhijeet) | `src/bigbrother/sandbox/`, `docker/` |
-| D Proof (Vanshaj, Codex) | `src/bigbrother/report/`, `examples/`, `README.md` |
+| D Proof (Vanshaj, second Claude Code account) | `src/bigbrother/report/`, `examples/`, `README.md` |
 | Eval data (Radhika) | `eval/cases.yaml`, reviews, no feature code |
 
 `schema.py` and `contracts.py` are the contract between lanes. Only Lane A changes them, and says so in the group chat.

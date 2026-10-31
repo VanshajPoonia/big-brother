@@ -9,10 +9,10 @@ Build order: version and symbol checks, then one real reproduction, then verdict
 | # | Who | Lane | Owns | Issue |
 | --- | --- | --- | --- | --- |
 | 1 | Vanshaj, Claude Code | A Core | `schema.py`, `contracts.py`, `extract/`, `verdict.py`, `pipeline.py`, `cli.py`, `pyproject.toml`, `tests/conftest.py`, `tests/fixtures/` | #2 |
-| 2 | Vanshaj, Codex | D Proof | `src/bigbrother/report/`, `examples/`, `README.md` | #5 |
+| 2 | Vanshaj, Claude Code (second account) | D Proof | `src/bigbrother/report/`, `examples/`, `README.md` | #5 |
 | 3 | Somya | B Ingest and premises | `src/bigbrother/ingest/`, `src/bigbrother/premises/` | #3 |
 | 4 | Abhijeet | C Sandbox | `src/bigbrother/sandbox/`, `docker/` | #4 |
-| 5 | Radhika, or whoever is free | Eval data and reviews | `eval/cases.yaml`, reviews, pitch, backup video | #6 |
+| 5 | Radhika, writing only | Eval data, writing and reviews | `eval/cases.yaml`, `docs/PITCH.md`, `docs/BLOG.md`, reviews, backup video | #6 |
 
 Each lane owns the tests for its folders.
 
@@ -60,7 +60,7 @@ Sync for 5 minutes at 9:45, 11:00, 12:30, 2:00, 3:30, 4:30 and 5:30: done, next,
 
 | Risk | Plan |
 | --- | --- |
-| A laptop can't run `qwen3:4b` | Point `OLLAMA_HOST` at the demo Mac, or `BIGBROTHER_API=openai` at any other server |
+| A laptop can't run `qwen3:4b` | Point `OLLAMA_HOST` at the demo Mac, or `BIGBROTHER_API=llamacpp` at any other local server |
 | Judges' setup unknown | Layers in ARCHITECTURE.md: reports readable with no install, `--replay` with no model, full run with a model |
 | Docker slow on macOS | One small base image, built once |
 | Merge conflicts | Folder ownership, contracts first, small PRs |

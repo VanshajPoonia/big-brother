@@ -1,6 +1,6 @@
 # Original plan (v1)
 
-Kept as written at 8:15 PM, before Codex's review cut the scope. Read it again at the 3:30 AM checkpoint: if we're ahead, pick stretch work from here. The cut list and why is at the bottom.
+Kept as written at 8:15 PM, before the second review cut the scope. Read it again at the 3:30 AM checkpoint: if we're ahead, pick stretch work from here. The cut list and why is at the bottom.
 
 ---
 
@@ -46,7 +46,7 @@ Dual LLM pattern (CaMeL-style), constrained decoding, time-travel reproduction (
 | OSV.dev lookup for security claims | Extra network dependency | Premises are done and tested |
 | Hypothesis search | Needs a property per claim | One demo case could use it |
 | `git bisect run` | Needs a fast, reliable runner first | Runner takes under 10 s per run |
-| Dual LLM split | Two passes don't prove safety on their own (Codex) | Never, the evidence rules cover it |
+| Dual LLM split | Two passes don't prove safety on their own | Never, the evidence rules cover it |
 | `uv --exclude-newer` by default | Old pins break on new Python | Only as a retry when install fails |
 | OpenVEX, signed evidence, tracing, gVisor | Not graded, hours of setup | No |
 | Watcher bot, GitHub App | Webhooks and auth take hours | No, roadmap |

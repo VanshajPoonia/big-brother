@@ -8,7 +8,7 @@ from bigbrother.extract.model import (
     DEFAULT_MODEL,
     ModelError,
     OllamaModel,
-    OpenAICompatModel,
+    LlamaServerModel,
     ReplayModel,
     default_model,
     ollama_host,
@@ -104,7 +104,7 @@ def test_default_is_the_small_model(monkeypatch):
     assert OllamaModel(client=httpx.Client()).name == "qwen3:4b"
 
 
-def test_openai_style_servers_work_too():
+def test_llama_cpp_style_servers_work_too():
     sent = []
 
     def handler(request):
@@ -117,7 +117,7 @@ def test_openai_style_servers_work_too():
         return httpx.Response(200, json=body)
 
     client = httpx.Client(base_url="http://llama.test/v1", transport=httpx.MockTransport(handler))
-    parsed, call = OpenAICompatModel(name="qwen3:4b", client=client).chat_json("extract", MESSAGES, Extraction)
+    parsed, call = LlamaServerModel(name="qwen3:4b", client=client).chat_json("extract", MESSAGES, Extraction)
 
     path, request = sent[0]
     assert path == "/v1/chat/completions"
@@ -128,8 +128,8 @@ def test_openai_style_servers_work_too():
 
 
 def test_default_model_follows_the_environment(monkeypatch):
-    monkeypatch.setenv("BIGBROTHER_API", "openai")
-    assert isinstance(default_model(), OpenAICompatModel)
+    monkeypatch.setenv("BIGBROTHER_API", "llamacpp")
+    assert isinstance(default_model(), LlamaServerModel)
     monkeypatch.setenv("BIGBROTHER_API", "ollama")
     assert isinstance(default_model(), OllamaModel)
     monkeypatch.setenv("BIGBROTHER_API", "cloud")

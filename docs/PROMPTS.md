@@ -54,7 +54,7 @@ Pull main with every lane merged. Run bigbrother check on the 3 fixture issues a
 
 ---
 
-## Account 2: Vanshaj, Codex (Lane D, issue #5)
+## Account 2: Vanshaj, second Claude Code account (Lane D, issue #5)
 
 ### Phase 1 (9:45 PM to 12:30 AM)
 
@@ -71,7 +71,7 @@ Branch: report/markdown-and-metrics
 3. Tests with hand-built Report objects for every function.
 
 pytest -q must pass before every push. Commit messages end with:
-Coding agent: Codex
+Coding agent: Claude Code
 Models used in project: Qwen3 4B (qwen3:4b via Ollama)
 PR with the template, "Part of #5", ask Radhika to review.
 ```
@@ -202,7 +202,7 @@ run_tests(repo_dir, sha, test_paths, package) -> RunResult: install at sha, run 
 
 ---
 
-## Account 5: Radhika (eval data and reviews, issue #6)
+## Account 5: Radhika (eval data, writing and reviews, issue #6)
 
 ### Phase 1 (9:45 PM to 12:30 AM)
 
@@ -222,6 +222,18 @@ Add them to eval/cases.yaml:
   note: the function in the report doesn't exist, maintainer said so
 
 Branch eval/cases. The commit message ends with "Coding agent: none" and "Models used in project: Qwen3 4B (qwen3:4b via Ollama)". PR with the template and "Part of #5", ask Vanshaj to review.
+```
+
+### Writing (alongside phases 1 and 2)
+
+```
+You're writing for Big Brother. No code. Read docs/PRODUCT.md, docs/ARCHITECTURE.md, docs/DECISIONS.md and the writing style in AGENTS.md.
+
+1. docs/PITCH.md: the 8 minute pitch as a script with timings, in the demo order from PRODUCT.md. Say who speaks each part (Vanshaj, Somya, Abhijeet, Radhika). Short spoken sentences.
+2. In the same file, a Q&A sheet: 10 questions judges will likely ask (why no agent loop, why a 4B model, what if the model lies, how running untrusted code is safe, how accurate it is, what it gets wrong) with 2-line answers taken from ARCHITECTURE.md and DECISIONS.md.
+3. docs/BLOG.md: a DEV post draft for tonight's blog challenge: the problem, what we built, what we learned. 600 to 900 words, plain and honest, no hype.
+
+No emojis, no em dashes. Branch docs/pitch. The commit message ends with "Coding agent: none" (or the tool you used) and "Models used in project: Qwen3 4B (qwen3:4b via Ollama)". PR with the template, "Part of #6", ask Vanshaj to review.
 ```
 
 ### Phase 2 onward

@@ -1,7 +1,7 @@
 """Talking to the model, plus a replay model for tests and `--replay`.
 
-Two ways to reach it: Ollama's own API (the default) or the OpenAI-style chat API that
-llama.cpp, LM Studio, vLLM and Ollama all serve. Either way the model is open-weight.
+Two ways to reach it: Ollama's own API (the default) or the /v1/chat/completions API that
+llama.cpp's llama-server, vLLM, LM Studio and Ollama all serve. Either way the model is open-weight.
 """
 
 from __future__ import annotations
@@ -106,8 +106,8 @@ class OllamaModel(_RetryingModel):
         return request, data, content, usage
 
 
-class OpenAICompatModel(_RetryingModel):
-    """Any server with an OpenAI-style /chat/completions endpoint, running an open-weight model."""
+class LlamaServerModel(_RetryingModel):
+    """Any local server with llama.cpp's /v1/chat/completions endpoint, running an open-weight model."""
 
     def __init__(self, name: str | None = None, base_url: str | None = None, client: httpx.Client | None = None):
         self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
@@ -138,13 +138,13 @@ class OpenAICompatModel(_RetryingModel):
 
 
 def default_model() -> Model:
-    """Pick the client from BIGBROTHER_API: `ollama` (default) or `openai` for the OpenAI-style API."""
+    """Pick the client from BIGBROTHER_API: `ollama` (default) or `llamacpp` for any llama.cpp-style server."""
     api = os.environ.get("BIGBROTHER_API", "ollama")
     if api == "ollama":
         return OllamaModel()
-    if api == "openai":
-        return OpenAICompatModel()
-    raise ModelError(f"unknown BIGBROTHER_API {api!r}, use ollama or openai")
+    if api == "llamacpp":
+        return LlamaServerModel()
+    raise ModelError(f"unknown BIGBROTHER_API {api!r}, use ollama or llamacpp")
 
 
 class ReplayModel:
