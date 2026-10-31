@@ -1,0 +1,61 @@
+import json
+
+import httpx
+import pytest
+
+from bigbrother import bot
+
+
+def recording(responses):
+    seen = []
+
+    def handler(request):
+        seen.append((request.method, request.url.path, json.loads(request.content) if request.content else None))
+        return httpx.Response(200, json=responses.get(request.url.path, {}))
+
+    return httpx.Client(transport=httpx.MockTransport(handler)), seen
+
+
+@pytest.fixture(autouse=True)
+def fake_token(monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+
+
+@pytest.mark.parametrize("repo", ["python-humanize/humanize", "Textualize/rich", "daggers/tinylib", "VanshajPoonia/big-brother"])
+def test_never_comments_outside_the_demo_repo(repo):
+    client, seen = recording({})
+    with pytest.raises(bot.NotDemoRepo):
+        bot.post(repo, 1, "**confirmed**", "confirmed", client=client)
+    with pytest.raises(bot.NotDemoRepo):
+        bot.pending(repo, client=client)
+    assert seen == []
+
+
+def test_posts_the_comment_then_the_label():
+    client, seen = recording({"/repos/VanshajPoonia/big-brother-demo/issues/3/comments": {"html_url": "https://x/3#c"}})
+    link = bot.post("VanshajPoonia/big-brother-demo", 3, "**invalid**", "invalid", client=client)
+
+    assert link == "https://x/3#c"
+    assert seen[0][:2] == ("POST", "/repos/VanshajPoonia/big-brother-demo/issues/3/comments")
+    assert seen[0][2]["body"].endswith(bot.MARKER + "\n")
+    assert seen[1] == ("POST", "/repos/VanshajPoonia/big-brother-demo/issues/3/labels", {"labels": ["invalid"]})
+
+
+def test_pending_skips_what_already_has_our_label():
+    items = [
+        {"number": 1, "html_url": "https://github.com/VanshajPoonia/big-brother-demo/issues/1", "labels": [{"name": "confirmed"}]},
+        {"number": 2, "html_url": "https://github.com/VanshajPoonia/big-brother-demo/issues/2", "labels": [{"name": "bug"}]},
+        {"number": 3, "html_url": "https://github.com/VanshajPoonia/big-brother-demo/pull/3", "labels": [], "pull_request": {}},
+    ]
+    client, _ = recording({"/repos/VanshajPoonia/big-brother-demo/issues": items})
+    assert bot.pending("VanshajPoonia/big-brother-demo", client=client) == [
+        ("issue", 2, "https://github.com/VanshajPoonia/big-brother-demo/issues/2"),
+        ("pull", 3, "https://github.com/VanshajPoonia/big-brother-demo/pull/3"),
+    ]
+
+
+def test_check_comment_refuses_a_real_project_before_doing_anything(capsys):
+    from bigbrother.cli import main
+
+    assert main(["check", "tests/fixtures/issues/real_bug.json", "--comment"]) == 2
+    assert "isn't our demo repo" in capsys.readouterr().err
