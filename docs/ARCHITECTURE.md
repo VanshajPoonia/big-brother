@@ -10,6 +10,7 @@ issue (title + body only, never comments or labels)
   2 extract     Qwen call 1: central claim, premises, symptom quoted from the report
   3 premises    version and symbol checks: present / absent / unknown / error
   4 reproduce   reporter's code if it runs, else Qwen call 2 writes a script
+                from the frozen symptom and source excerpts (one fix round)
                 install with network, then run offline, both in Docker
   5 decide      fixed rules: label, confidence, basis
   6 output      report.json, report.md, evidence/
@@ -21,9 +22,9 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 
 | Part | Choice | Why not the alternative |
 | --- | --- | --- |
-| Model runtime | Ollama | llama.cpp needs more setup, LM Studio is a GUI, vLLM needs a GPU |
-| Model | `qwen3:8b`, thinking off, temperature 0, fixed seed | Good at code and JSON, fits 16 GB. Others are weaker at JSON or slower |
-| Model calls | At most 2 per issue, single structured requests | An agent loop lets the model pick actions. We don't want that, and we don't need it |
+| Model runtime | Ollama by default. `BIGBROTHER_API=llamacpp` talks to any local server with llama.cpp's `/v1/chat/completions` API (llama.cpp, vLLM, LM Studio, Ollama) | Locking to one server breaks on machines that run another |
+| Model | `qwen3:4b` (about 2.5 GB, runs on CPU), thinking off, temperature 0, fixed seed | It only fills small schema-checked JSON and writes one short script, and rules pick the label. 8B needs about twice the memory |
+| Model calls | At most 3 per issue: extract, write a script, and one fix if the script breaks on its own | An agent loop lets the model pick actions. We don't want that, and we don't need it |
 | Schemas | Pydantic v2 | One model gives the JSON schema Ollama enforces and validates the answer. Up to 2 retries |
 | Issue data | GitHub REST API via `httpx`, optional token in `.env` | Comments contain the answer, so we never read them |
 | Repos | Full clones, cached locally | Partial clones fetch missing blobs over the network during history checks |
@@ -33,7 +34,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 | Installs | `uv pip install` | Much faster than pip across 15 eval repos |
 | Verdict | Fixed Python rules | Explainable and unit-tested. A model or classifier would guess |
 | Interface | CLI: `check`, `eval`, `doctor` | A GitHub App needs webhooks, a public URL and auth. It's on the roadmap |
-| Tests | pytest, a fake model replaying saved Qwen responses, a real Docker test in CI | Pulling a 5 GB model in CI is too slow |
+| Tests | pytest, a fake model replaying saved Qwen responses, a real Docker test in CI | Pulling a model in CI is slow and proves nothing the saved runs don't |
 
 ## Evidence rules
 
@@ -57,19 +58,33 @@ Applied top to bottom. Every report also records the revision, how it was picked
 
 A wrong minor detail never overrides rule 1, it only gets listed. Known limit: reports that are invalid because of misuse or an unsupported setup aren't detected and usually land in rule 3 or 4.
 
+The label is derived, the facts are stored. Every report keeps the raw facts (execution status, each premise state, what ran, what matched), and the label comes from this table. Rule 5's label is a policy, not a fact: `--blocked-label invalid` changes it without touching code.
+
 ## Sandbox contract
 
 - Install: network on, a copy of the repo only, no environment variables, CPU, memory and process limits, 5 minute cap, output capped.
 - Run: `--network none --read-only`, dependencies mounted `:ro`, `--tmpfs /tmp:size=64m`, `--cap-drop ALL`, `--security-opt no-new-privileges`, non-root, `--pids-limit 128 --memory 1g --cpus 1`, 60 second cap, output capped at 64 KB. The container is named and removed on timeout.
 - Recorded: image digest, Python version, `uv pip freeze`, exact commands.
 
-## Without a model
+## Runs anywhere
 
-`--replay` reruns from saved Qwen responses, so `examples/` and the eval reproduce exactly. If Ollama isn't reachable, the report says so and the label comes from premise checks and the reporter's own code only, at low confidence. `OLLAMA_HOST` points at another Ollama server.
+Each layer works without the one above it. `bigbrother doctor` says which layer a machine is on.
+
+| Layer | Needs | What works |
+| --- | --- | --- |
+| 0 | A browser | The reports in `examples/`, readable on GitHub |
+| 1 | Python and git | Premise checks, `--replay` from saved model responses, and a no-model extractor |
+| 2 | Plus Docker | Real reproduction of the reporter's own code |
+| 3 | Plus a model | The full pipeline |
+
+- Never crash. Every stage turns its own failures into `unknown` or `error`, and a report is always written. The CLI only exits non-zero for bad input.
+- Every network call and container has a timeout.
+- No model reachable: a pattern-based extractor picks up backticked names, versions and `SomethingError: ...` lines. The report says the model wasn't used and confidence stays low.
+- `OLLAMA_HOST`, `BIGBROTHER_API`, `BIGBROTHER_BASE_URL` and `BIGBROTHER_MODEL` point it at any server. Whatever runs, its name and digest go into the report.
 
 ## Metrics
 
-`bigbrother eval` reports accuracy over all cases (blocked ones included), per-label precision and recall, a confusion matrix, false `invalid`s, blocked rate, seconds and tokens per issue, and the model name and digest. It runs on 10 to 15 hand-checked public issues, kept apart from the 4 demo cases.
+`bigbrother eval` reports accuracy twice, once counting blocked cases as wrong and once leaving them out, so the number is honest whichever way it's graded. Plus per-label precision and recall, a confusion matrix, false `invalid`s, blocked rate, seconds and tokens per issue, and the model name and digest. It runs on 10 to 15 hand-checked public issues, kept apart from the 4 demo cases.
 
 ## Not now
 

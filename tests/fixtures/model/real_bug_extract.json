@@ -1,0 +1,19 @@
+{
+  "step": "extract",
+  "model": "qwen3:4b",
+  "request": {"note": "hand-written fixture, not a real Qwen run"},
+  "response": {
+    "model": "qwen3:4b",
+    "message": {
+      "role": "assistant",
+      "content": "{\"central_claim\": \"parse_url raises ValueError for URLs longer than 255 characters\", \"package\": \"tinylib\", \"claimed_version\": \"1.1.0\", \"premises\": [{\"kind\": \"symbol\", \"value\": \"tinylib.parse_url\", \"central\": true}, {\"kind\": \"version\", \"value\": \"1.1.0\", \"central\": false}], \"symptom\": {\"kind\": \"exception\", \"quote\": \"ValueError: URL too long\", \"exception_type\": \"ValueError\"}, \"has_steps\": true}"
+    },
+    "prompt_eval_count": 412,
+    "eval_count": 96,
+    "total_duration": 4100000000
+  },
+  "attempts": 1,
+  "prompt_tokens": 412,
+  "output_tokens": 96,
+  "duration_s": 4.1
+}

@@ -1,0 +1,8 @@
+{
+  "url": "https://github.com/daggers/tinylib/issues/1",
+  "repo": "daggers/tinylib",
+  "number": 1,
+  "title": "parse_url crashes on long URLs",
+  "body": "On tinylib 1.1.0, parsing a URL longer than 255 characters fails:\n\n```python\nfrom tinylib import parse_url\nparse_url(\"https://example.com/\" + \"a\" * 300)\n```\n\n```\nValueError: URL too long\n```\n\nIt worked on 1.0.0.",
+  "created_at": "2026-03-05T12:00:00Z"
+}
