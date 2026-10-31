@@ -215,6 +215,17 @@ class Verdict(BaseModel):
     reasons: list[str] = Field(default_factory=list)
 
 
+class EvalCase(BaseModel):
+    """One hand-checked issue in eval/cases.yaml."""
+
+    id: str = Field(pattern=r"^[\w.-]+$")
+    issue_url: str
+    repo: str = Field(pattern=r"^[\w.-]+/[\w.-]+$")
+    expected: Label
+    checked_by: str
+    note: str = ""
+
+
 class Report(BaseModel):
     tool_version: str
     model_available: bool

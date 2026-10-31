@@ -73,6 +73,23 @@ def test_run_output_is_capped():
     assert len(run.stdout) == OUTPUT_CAP
 
 
+def test_eval_cases_load_from_yaml():
+    import yaml
+
+    from bigbrother.schema import EvalCase
+
+    raw = yaml.safe_load(
+        """
+- id: tinylib-2
+  issue_url: https://github.com/daggers/tinylib/issues/2
+  repo: daggers/tinylib
+  expected: cannot reproduce
+  checked_by: Radhika
+"""
+    )
+    assert EvalCase.model_validate(raw[0]).expected == Label.CANNOT_REPRODUCE
+
+
 def test_report_round_trips_through_json(load_issue):
     report = Report(
         tool_version="0.1.0",

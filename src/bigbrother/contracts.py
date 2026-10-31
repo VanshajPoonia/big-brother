@@ -1,5 +1,6 @@
 """The function each lane implements. The pipeline only talks to lanes through these.
 
+Lane B puts `fetch_issue` and `ensure_clone` in `bigbrother.ingest`.
 Lane B puts `resolve_revision` and `check_premises` in `bigbrother.premises`.
 Lane C puts `reproduce` in `bigbrother.sandbox`.
 Lane D puts `render_markdown` in `bigbrother.report`.
@@ -21,6 +22,16 @@ from bigbrother.schema import (
     RunResult,
     Symptom,
 )
+
+
+class FetchIssue(Protocol):
+    def __call__(self, url: str) -> Issue:
+        """Fetch an issue's title, body and creation time from GitHub. Never comments or labels."""
+
+
+class EnsureClone(Protocol):
+    def __call__(self, repo: str, cache_dir: Path) -> Path:
+        """Full clone of `owner/name` into the cache, or fetch new tags if it's already there."""
 
 
 class ResolveRevision(Protocol):
