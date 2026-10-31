@@ -10,7 +10,7 @@
 /src/bigbrother/contracts.py   @VanshajPoonia
 /tests/conftest.py             @VanshajPoonia
 /tests/fixtures/               @VanshajPoonia
-/src/bigbrother/ingest/        @VanshajPoonia
+/src/bigbrother/pipeline.py    @VanshajPoonia
 /src/bigbrother/extract/       @VanshajPoonia
 /src/bigbrother/verdict.py     @VanshajPoonia
 /src/bigbrother/cli.py         @VanshajPoonia

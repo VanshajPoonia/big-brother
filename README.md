@@ -4,7 +4,7 @@ Big Brother is watching your claims.
 
 It reads an issue or pull request, pulls out each technical claim ("crashes on 2.4.1", "fixes #120", "RCE in `parse_url_v2()`") and checks it against the code. You get a verdict per claim with the evidence behind it, or "unverified" when the evidence isn't there.
 
-It runs on a local open-weight model (Qwen3 8B via Ollama). No cloud AI.
+It runs on a local open-weight model (Qwen3 4B via Ollama). No cloud AI.
 
 Built at Hacktoberfest Hack Day Sonipat by Team Daggers. Work in progress, see [docs/PLAN.md](docs/PLAN.md).
 
@@ -12,7 +12,7 @@ Built at Hacktoberfest Hack Day Sonipat by Team Daggers. Work in progress, see [
 
 ```
 pip install -e ".[dev]"
-ollama pull qwen3:8b
+ollama pull qwen3:4b
 ```
 
 ## Run
