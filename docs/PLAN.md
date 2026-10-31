@@ -20,7 +20,7 @@ Each lane owns the tests for its folders.
 
 | Phase | Time | 1 Core | 2 Proof | 3 Somya | 4 Abhijeet | 5 Radhika |
 | --- | --- | --- | --- | --- | --- | --- |
-| 0 | now to 9:45 PM | Merge #1, #7, #8. Ollama and `qwen3:8b` on the demo Mac | Read docs | Read docs | Docker running | Start finding repos |
+| 0 | now to 9:45 PM | Merge #1, #7, #8. Ollama and `qwen3:4b` on the demo Mac | Read docs | Read docs | Docker running | Start finding repos |
 | 1 | 9:45 PM to 12:30 AM | Extraction, verdict rules, pipeline, `check` | Markdown report, metrics | Fetch issue, clone, revision, symbol index | Image, install, run, traceback | 15 candidate issues |
 | 2 | 12:30 to 3:00 AM | Repro script with one fix round, `--replay`, `doctor`, `eval` | Examples, README for judges | PyPI versions, re-exports, targeted history | Import check, environment record, Docker test in CI | Hand-check labels, first eval run |
 | 3 | 3:00 to 3:30 AM | Integration fixes | Rehearsal notes | Fixes | Fixes | Clean-clone rehearsal |
@@ -60,7 +60,8 @@ Sync for 5 minutes at 9:45, 11:00, 12:30, 2:00, 3:30, 4:30 and 5:30: done, next,
 
 | Risk | Plan |
 | --- | --- |
-| A laptop can't run `qwen3:8b` | Point `OLLAMA_HOST` at the demo Mac |
+| A laptop can't run `qwen3:4b` | Point `OLLAMA_HOST` at the demo Mac, or `BIGBROTHER_API=openai` at any other server |
+| Judges' setup unknown | Layers in ARCHITECTURE.md: reports readable with no install, `--replay` with no model, full run with a model |
 | Docker slow on macOS | One small base image, built once |
 | Merge conflicts | Folder ownership, contracts first, small PRs |
 | Malformed model output | JSON schema, Pydantic validation, 2 retries |

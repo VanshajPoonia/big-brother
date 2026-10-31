@@ -19,7 +19,7 @@ Branch: core/extract-and-verdict
 2. extract/code.py: code_blocks(body) and reporter_script(body) -> ReproScript | None. Use a fenced block when it parses with ast and calls something.
 3. verdict.py: decide(extraction, premises, run, revision) -> Verdict. The 5 rules in ARCHITECTURE.md, in order, with plain reasons. Tests for every rule and for mixed evidence: confirmed despite a wrong minor version; an absent central symbol on an issue_date revision is medium; a different failure is low; blocked is basis=fallback; the reporter's own code running cleanly is high.
 4. pipeline.py: check(issue, repo_dir, model, *, resolve_revision, check_premises, reproduce, write_repro=None) -> Report. Lane functions come in as arguments so it's testable with fakes before the lanes merge. Skip the run when a central premise is absent.
-5. cli.py: bigbrother check <issue.json or url> --repo PATH --out DIR [--json]. Import the real lane functions lazily and say which lane is missing if one isn't merged yet.
+5. cli.py: bigbrother check <issue.json or url> --repo PATH --out DIR [--json]. Get the model from extract.model.default_model(). Import the real lane functions lazily and say which lane is missing if one isn't merged yet.
 6. Tests with ReplayModel and fake lane functions for all three fixture issues.
 
 pytest -q must pass before every push. Commit lines from AGENTS.md. PR with "Part of #2", ask Radhika to review.
@@ -33,10 +33,13 @@ Lane A, phase 2, issue #2. Same rules as before. Branch: core/repro-and-tools
 1. extract/repro.py: write_repro(issue, extraction, excerpts, model) -> (ReproScript, ModelCall), Qwen call 2. Give it the frozen symptom and the source excerpts of the central symbols from Lane B's results. Reject scripts that use raise, sys.exit, exit, quit or os._exit (ast check) and ask again once with the reason.
 2. One fix round in the pipeline: if the run fails inside the script itself (SyntaxError, NameError, or an ImportError of something outside the package), send the error back for one new script. At most 3 model calls per issue.
 3. --replay DIR: rerun using the model calls saved in DIR/report.json.
-4. bigbrother doctor: Ollama reachable, qwen3:8b pulled (print its digest from /api/show), Docker running. A clear fix for each failure.
+4. bigbrother doctor: Ollama reachable, qwen3:4b pulled (print its digest from /api/show), Docker running. A clear fix for each failure.
 5. bigbrother eval eval/cases.yaml --out eval/results: runs check on every case, uses bigbrother.report.metrics, writes eval/results/latest.md and latest.json, saves each report under eval/runs/.
 6. Save every check to out/<owner>__<repo>-<number>/report.json and report.md.
-7. Run it for real on the demo Mac: one fixture issue and one real public issue. Fix what breaks.
+7. Never crash: every stage turns its own failures into unknown or error, and a report is always written. The CLI only exits non-zero for bad input.
+8. extract/heuristic.py: a no-model extractor (backticked names, dotted names followed by "(", versions, "SomethingError: ..." lines) used when no model is reachable. The report sets model_available=false and confidence stays low.
+9. --blocked-label (default "cannot reproduce") for rule 5, and doctor prints which layer (0 to 3 in ARCHITECTURE.md) this machine is on.
+10. Run it for real on the demo Mac: one fixture issue and one real public issue. Fix what breaks.
 
 pytest -q must pass before every push. "Part of #2".
 ```
@@ -63,13 +66,13 @@ Branch: report/markdown-and-metrics
 1. src/bigbrother/report/__init__.py: render_markdown(report) -> str, matching contracts.py. First line: label, confidence and basis. Then: what we checked (revision and how it was picked), premises (state and excerpt), the run (status, exit code, exception, last 20 lines of output) and the model calls (model, tokens, seconds). Plain and short, no emojis.
 2. src/bigbrother/report/metrics.py:
    - load_cases(path) -> list[EvalCase] from eval/cases.yaml
-   - score(cases, reports) -> Metrics, where reports[i] is None if that run crashed. Accuracy over all cases (a crash counts as wrong), per-label precision and recall, a 3x3 confusion matrix, false invalids (said invalid, expected something else), blocked rate (basis=fallback), mean seconds and tokens per issue from the model calls.
+   - score(cases, reports) -> Metrics, where reports[i] is None if that run crashed. Accuracy twice: once over all cases (a crash or blocked case that's wrong counts as wrong), once leaving out cases with basis=fallback. Per-label precision and recall, a 3x3 confusion matrix, false invalids (said invalid, expected something else), blocked rate (basis=fallback), mean seconds and tokens per issue from the model calls.
    - render_results(metrics) -> Markdown tables.
 3. Tests with hand-built Report objects for every function.
 
 pytest -q must pass before every push. Commit messages end with:
 Coding agent: Codex
-Models used in project: Qwen3 8B (qwen3:8b via Ollama)
+Models used in project: Qwen3 4B (qwen3:4b via Ollama)
 PR with the template, "Part of #5", ask Radhika to review.
 ```
 
@@ -119,7 +122,7 @@ Branch: premises/revision-and-symbols
 
 pytest -q must pass before every push. Commit messages end with:
 Coding agent: <your agent>
-Models used in project: Qwen3 8B (qwen3:8b via Ollama)
+Models used in project: Qwen3 4B (qwen3:4b via Ollama)
 Rebase on origin/main, run pytest -q again, push, open a PR with the template and "Part of #3", ask Abhijeet to review. Keep the PR text short and plain.
 ```
 
@@ -171,7 +174,7 @@ Branch: sandbox/install-and-run
 
 pytest -q must pass locally with Docker running before every push. CI runs the Docker tests too. Commit messages end with:
 Coding agent: <your agent>
-Models used in project: Qwen3 8B (qwen3:8b via Ollama)
+Models used in project: Qwen3 4B (qwen3:4b via Ollama)
 Rebase on origin/main, run pytest -q again, push, open a PR with the template and "Part of #4", ask Somya to review.
 ```
 
@@ -218,7 +221,7 @@ Add them to eval/cases.yaml:
   checked_by: Radhika
   note: the function in the report doesn't exist, maintainer said so
 
-Branch eval/cases. The commit message ends with "Coding agent: none" and "Models used in project: Qwen3 8B (qwen3:8b via Ollama)". PR with the template and "Part of #5", ask Vanshaj to review.
+Branch eval/cases. The commit message ends with "Coding agent: none" and "Models used in project: Qwen3 4B (qwen3:4b via Ollama)". PR with the template and "Part of #5", ask Vanshaj to review.
 ```
 
 ### Phase 2 onward
@@ -236,5 +239,5 @@ Branch eval/cases. The commit message ends with "Coding agent: none" and "Models
 ## Everyone at 4:30 AM: freeze
 
 ```
-Feature freeze. Only fix bugs, add tests and update docs. No new features. Every PR still needs green CI and a review. Last merge at 6:15 AM. Before then, check: CI green on main, HACKATHON.md names only qwen3:8b, examples/ regenerated from real runs, the README commands work from a clean clone.
+Feature freeze. Only fix bugs, add tests and update docs. No new features. Every PR still needs green CI and a review. Last merge at 6:15 AM. Before then, check: CI green on main, HACKATHON.md names only qwen3:4b, examples/ regenerated from real runs, the README commands work from a clean clone.
 ```

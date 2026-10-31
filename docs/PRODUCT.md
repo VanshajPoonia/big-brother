@@ -24,7 +24,7 @@ Reading a report is cheap. Checking it is not: find the code, set up the version
 
 1. **Evidence, not opinion.** Labels come from running code and reading the source, not from how the text sounds.
 2. **Built for fake reports too.** Research tools assume the bug is real. We check the premises first.
-3. **Fully local.** Qwen3 8B on a laptop. No API keys, nothing leaves the machine, $0 per issue.
+3. **Fully local.** Qwen3 4B on a laptop. No API keys, nothing leaves the machine, $0 per issue.
 4. **The model never picks the label.** Fixed, tested rules do. Every label says how sure it is and why.
 5. **Tests what the reporter had.** The claimed version, or the code on the day the issue was filed.
 6. **Replayable.** Every label ships with the commands, outputs and model responses behind it.

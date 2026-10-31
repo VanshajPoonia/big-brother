@@ -46,3 +46,9 @@ Borrowed from Issue2Test: if a script breaks for its own reasons, Qwen gets the 
 
 **31 Oct, 9:20 PM. Original plan kept in docs/archive/.**
 We read it again at the 3:30 AM checkpoint and pick stretch work only if everything is green.
+
+**31 Oct, 9:25 PM. Switch to qwen3:4b, reachable over any server.**
+The model only fills schema-checked JSON and writes one short script, and rules pick the label, so 4B is enough. It's about 2.5 GB and runs on CPU, which matters on machines we don't control. `BIGBROTHER_API=openai` reaches llama.cpp, LM Studio, vLLM or Ollama through the OpenAI-style API. Replaces the 8:00 PM choice of 8B.
+
+**31 Oct, 9:25 PM. Built so grading rules and machines can't break it.**
+Reports store raw facts and derive the label, `--blocked-label` changes the blocked policy without code, eval prints accuracy with and without blocked cases, and the tool works in layers from "no install" to "full model". It never crashes, it always writes a report.

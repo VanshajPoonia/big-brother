@@ -4,7 +4,7 @@ Rules for everyone working on Big Brother, people and coding agents alike. Read 
 
 ## What we're building
 
-A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, with evidence. Qwen3 8B (via Ollama) extracts the claims and, when needed, writes a repro script. Labels come from fixed rules over version and symbol checks and a sandboxed run. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, with evidence. Qwen3 4B (via Ollama) extracts the claims and, when needed, writes a repro script. Labels come from fixed rules over version and symbol checks and a sandboxed run. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Hard rules
 
@@ -12,10 +12,10 @@ A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, 
 - Every commit message ends with these two lines:
   ```
   Coding agent: <Claude Code / Codex / Copilot / none>
-  Models used in project: Qwen3 8B (qwen3:8b via Ollama)
+  Models used in project: Qwen3 4B (qwen3:4b via Ollama)
   ```
 - Fill in the PR template. Name the coding agent and the models.
-- The product only uses `qwen3:8b` through Ollama. No OpenAI, Claude, Gemini or any other cloud AI inside the code. Adding a model means updating `HACKATHON.md` in the same PR.
+- The product only uses `qwen3:4b` through Ollama. No OpenAI, Claude, Gemini or any other cloud AI inside the code. Adding a model means updating `HACKATHON.md` in the same PR.
 - No secrets in the repo. Put them in `.env`, which is gitignored.
 - Never post issues or comments on real open-source projects. Only on our demo repo.
 - Tests must pass without Ollama. Use the fake model in tests.
