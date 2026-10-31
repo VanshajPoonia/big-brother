@@ -1,7 +1,9 @@
-"""Post a report on the issue or pull request it's about, the way a GitHub App would.
+"""Post a report on the issue or pull request it's about, as a bot.
 
-Comments only ever go to our own demo repo. The list is fixed here in the code, not read from a
-flag or a setting, so no typo can make the tool comment on a real project.
+A repo gets comments in two cases only. Our own demo repo, fixed here in the code, not read from
+a flag or a setting. Or the repo whose own GitHub Actions job is running the tool: its maintainers
+installed the workflow, and the job's token can't write anywhere else. So no typo or setting can
+make the tool comment on a project that didn't ask for it.
 """
 
 from __future__ import annotations
@@ -31,9 +33,15 @@ class NotDemoRepo(ValueError):
     pass
 
 
+def installed_here(repo: str) -> bool:
+    """True inside a GitHub Actions job of this same repo, which means its maintainers installed us."""
+    return os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("GITHUB_REPOSITORY", "").lower() == repo.lower()
+
+
 def require_demo(repo: str) -> None:
-    if repo.lower() not in DEMO_REPOS:
-        raise NotDemoRepo(f"{repo} isn't our demo repo. The tool only comments on {', '.join(sorted(DEMO_REPOS))}")
+    if repo.lower() not in DEMO_REPOS and not installed_here(repo):
+        raise NotDemoRepo(f"{repo} isn't our demo repo and didn't install the bot. The tool only comments on "
+                          f"{', '.join(sorted(DEMO_REPOS))}, or from a repo's own GitHub Actions job")
 
 
 def token() -> str:

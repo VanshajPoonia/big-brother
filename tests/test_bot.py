@@ -19,6 +19,9 @@ def recording(responses):
 @pytest.fixture(autouse=True)
 def fake_token(monkeypatch):
     monkeypatch.setenv("GITHUB_TOKEN", "test-token")
+    # CI runs inside GitHub Actions for this very repo, which would count as "installed here".
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
 
 
 @pytest.mark.parametrize("repo", ["python-humanize/humanize", "Textualize/rich", "daggers/tinylib", "VanshajPoonia/big-brother"])
@@ -80,3 +83,18 @@ def test_watch_refuses_a_real_project(capsys):
 
     assert main(["watch", "--repo", "Textualize/rich", "--once"]) == 2
     assert "isn't our demo repo" in capsys.readouterr().err
+
+
+def test_a_repo_that_installed_the_bot_can_get_comments_from_its_own_job(monkeypatch):
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "someone/their-lib")
+    bot.require_demo("someone/their-lib")
+    with pytest.raises(bot.NotDemoRepo):
+        bot.require_demo("python-humanize/humanize")  # a job in one repo never comments on another
+
+
+def test_the_repo_name_alone_isnt_enough_outside_actions(monkeypatch):
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setenv("GITHUB_REPOSITORY", "python-humanize/humanize")
+    with pytest.raises(bot.NotDemoRepo):
+        bot.require_demo("python-humanize/humanize")

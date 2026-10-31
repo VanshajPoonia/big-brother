@@ -35,11 +35,19 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--comment", action="store_true",
                        help="post the report on the issue and label it (only on our demo repo)")
 
-    pr = commands.add_parser("pr", help="say whether any test names the code a pull request changes")
-    pr.add_argument("url", help="a GitHub pull request URL")
-    pr.add_argument("--repo", type=Path, help="a local clone of the PR's repo (default: clone it into the cache)")
+    pr = commands.add_parser("pr", help="say whether the tests in a pull request check what it changes")
+    pr.add_argument("url", nargs="?", help="a GitHub pull request URL, or leave it out and use --base for a local branch")
+    pr.add_argument("--base", help="check a local branch instead, against this ref (like main). Nothing goes online")
+    pr.add_argument("--head", default="HEAD", help="the local ref to check with --base (default HEAD)")
+    pr.add_argument("--repo", type=Path, help="a local clone (default: clone it into the cache, or . with --base)")
+    pr.add_argument("--run-tests", action="store_true",
+                    help="also run the PR's test files in the offline sandbox, before and after the change (needs Docker)")
     pr.add_argument("--out", type=Path, default=Path("bigbrother-out"), help="folder for pr.json and pr.md")
     pr.add_argument("--comment", action="store_true", help="post the report on the PR and label it (only on our demo repo)")
+
+    init = commands.add_parser("init", help="install the bot in a repo: a GitHub Actions workflow for your own machine")
+    init.add_argument("path", nargs="?", type=Path, default=Path("."), help="the repo to install it in (default .)")
+    init.add_argument("--force", action="store_true", help="replace an existing workflow file")
 
     watch = commands.add_parser("watch", help="act as the bot on our demo repo: check every new issue and PR and comment")
     watch.add_argument("--repo", default="VanshajPoonia/big-brother-demo", help="owner/name, must be our demo repo")
@@ -210,19 +218,32 @@ def _clone(repo: str, local: Path | None) -> Path:
 def run_pr(args: argparse.Namespace) -> int:
     import httpx
 
-    from bigbrother.pullrequest import check_pr, fetch_commits, fetch_pr, parse_pr_url
+    from bigbrother.pullrequest import check_pr, fetch_commits, fetch_pr, local_pr, parse_pr_url
     from bigbrother.pullrequest import summary as pr_summary
 
+    if (args.url is None) == (args.base is None):
+        print("bigbrother: give a pull request URL, or --base for a local branch", file=sys.stderr)
+        return 2
     try:
-        repo, number = parse_pr_url(args.url)
-        if args.comment:
-            from bigbrother.bot import require_demo
+        if args.url is None:
+            if args.comment:
+                raise ValueError("a local branch has no pull request to comment on")
+            repo, number = None, 0
+            pr = local_pr(args.repo or Path("."), args.base, args.head)
+            repo_dir = args.repo or Path(".")
+        else:
+            repo, number = parse_pr_url(args.url)
+            if args.comment:
+                from bigbrother.bot import require_demo
 
-            require_demo(repo)
-        pr = fetch_pr(args.url)
-        repo_dir = _clone(repo, args.repo)
-        fetch_commits(repo_dir, pr)
-        report = check_pr(pr, repo_dir)
+                require_demo(repo)
+            pr = fetch_pr(args.url)
+            repo_dir = _clone(repo, args.repo)
+            fetch_commits(repo_dir, pr)
+        run_tests = None
+        if args.run_tests:
+            from bigbrother.sandbox import run_tests
+        report = check_pr(pr, repo_dir, run_tests=run_tests)
     except (OSError, ValueError, httpx.HTTPError, subprocess.SubprocessError) as error:
         print(f"bigbrother: {error}", file=sys.stderr)
         return 2
@@ -232,6 +253,32 @@ def run_pr(args: argparse.Namespace) -> int:
     print(pr_summary(report))
     if args.comment:
         return _post(repo, number, pr_summary(report, heading=False), report.label.value)
+    return 0
+
+
+def run_init(args: argparse.Namespace) -> int:
+    from importlib.resources import files
+
+    target = args.path / ".github" / "workflows" / "bigbrother.yml"
+    if not (args.path / ".git").exists():
+        print(f"bigbrother: {args.path} isn't a git repo", file=sys.stderr)
+        return 2
+    if target.exists() and not args.force:
+        print(f"bigbrother: {target} is already there, --force replaces it", file=sys.stderr)
+        return 2
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(files("bigbrother").joinpath("workflow.yml").read_text(encoding="utf-8"), encoding="utf-8")
+    print(f"""wrote {target}
+
+The bot runs on your own machine as a GitHub Actions runner, so there's no server and the model
+never leaves it. On that machine:
+
+  1. Install Docker and Ollama, then: ollama pull qwen3:4b
+  2. Add a self-hosted runner with the label "bigbrother": on GitHub, Settings > Actions >
+     Runners > New self-hosted runner, follow the steps, and add --labels bigbrother to config.sh
+  3. Commit and push {target.relative_to(args.path)}
+
+Every new issue and pull request then gets a comment and a label from github-actions.""")
     return 0
 
 
@@ -263,7 +310,7 @@ def run_watch(args: argparse.Namespace) -> int:
             print(f"bigbrother: checking {url}", file=sys.stderr, flush=True)
             out = args.out / f"{kind}-{number}"
             if kind == "pull":
-                run_pr(argparse.Namespace(url=url, repo=None, out=out, comment=True))
+                run_pr(argparse.Namespace(url=url, base=None, head="HEAD", repo=None, out=out, comment=True, run_tests=True))
             else:
                 run_check(argparse.Namespace(issue=url, repo=None, out=out, json=False, replay=None, comment=True,
                                              blocked_label=Label.CANNOT_REPRODUCE.value))
@@ -384,6 +431,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_pr(args)
     if args.command == "watch":
         return run_watch(args)
+    if args.command == "init":
+        return run_init(args)
     if args.command == "doctor":
         return run_doctor()
     return 0

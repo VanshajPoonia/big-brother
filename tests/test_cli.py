@@ -132,3 +132,18 @@ def test_eval_only_reruns_some_but_scores_all(tmp_path, monkeypatch, capsys):
     results = (out / "results.md").read_text()
     assert "**2/2 (100%)**" in results  # a-1 rerun, a-2 from its saved report
     assert "Seconds per issue" not in results
+
+
+def test_init_writes_the_bot_workflow_once(tmp_path, capsys):
+    (tmp_path / ".git").mkdir()
+    assert main(["init", str(tmp_path)]) == 0
+    workflow = (tmp_path / ".github/workflows/bigbrother.yml").read_text()
+    assert "runs-on: [self-hosted, bigbrother]" in workflow and "pull_request_target" in workflow
+    assert "self-hosted runner" in capsys.readouterr().out
+    assert main(["init", str(tmp_path)]) == 2  # never overwrites without --force
+    assert main(["init", str(tmp_path), "--force"]) == 0
+
+
+def test_pr_needs_a_url_or_a_base(capsys):
+    assert main(["pr"]) == 2
+    assert "--base" in capsys.readouterr().err

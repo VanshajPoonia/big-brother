@@ -90,6 +90,8 @@ def run_ci_tests(rev: str) -> bool:
             tar.extractall(tree, filter="data")
 
         env = {k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "VIRTUAL_ENV"}}
+        # CI runs inside GitHub Actions, and code can behave differently there. Set what it sets.
+        env |= {"CI": "true", "GITHUB_ACTIONS": "true", "GITHUB_REPOSITORY": "VanshajPoonia/big-brother"}
         uv = shutil.which("uv")
         if uv:
             venv = Path(tmp) / "venv"
