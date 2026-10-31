@@ -36,10 +36,10 @@ If the live demo fails, show the saved reports in `examples/`, or rerun one with
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end.
 
-- 6 of 11 right, about a minute each.
-- When we said confirmed, it was a real bug every time. We never said invalid when it wasn't.
+- 7 of 11 right, about a minute each.
+- All 4 real bugs confirmed, and every confirmed was a real bug. We never said invalid when it wasn't.
 - All 4 real invalid reports came back as cannot reproduce. Real invalid reports are misunderstandings, an old version, a script named `select.py`. Our invalid check finds missing functions, and real people rarely make that mistake. Fake AI reports do.
-- Reporters often forget an import in their snippet. Qwen now repairs it once, and if it only added imports we still count it as the reporter's code. One real bug is still missed because the snippet uses a function the reporter only proposed.
+- Reporters often forget an import in their snippet. Qwen now repairs it once, and if it only added imports we still count it as the reporter's code. On toolz #99 the repair imported a function the reporter had only proposed, so we check every name it adds against the real source first. That bug from 2013 is now confirmed.
 - We also tried letting Qwen tag feature requests. It called all 11 reports bugs, so we dropped it rather than let the model guess.
 
 What we learned: running the code beats reading the text. And every real issue taught us something the tests didn't.
@@ -62,7 +62,7 @@ The issue is marked as untrusted data in the prompt and can't close its own bloc
 Docker with no network, a read-only filesystem, no capabilities, a non-root user, and limits on memory, processes and time. Installing has network access, running doesn't.
 
 **How accurate is it?**
-6 of 11 on real closed issues. Confirmed is never wrong and false invalid is zero. It misses real invalid reports.
+7 of 11 on real closed issues. All 4 real bugs confirmed, confirmed is never wrong, and false invalid is zero. It misses real invalid reports.
 
 **What does it get wrong?**
 Invalid reports that are misunderstandings or old versions. Wrong-output bugs only confirm at medium, and only from the reporter's own code. Python only.
