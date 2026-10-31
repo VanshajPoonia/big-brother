@@ -134,3 +134,22 @@ def test_a_quote_without_backticks_still_counts(load_issue):
     extraction, _, notes = extract(issue, answer(symptom={"kind": "other", "quote": quote, "exception_type": None}))
     assert extraction.symptom is not None
     assert notes == []
+
+
+def test_version_ranges_and_standard_library_names_are_dropped(load_issue):
+    # From humanize #400 and #122: Qwen listed "4.x" and datetime.datetime as premises.
+    issue = load_issue("real_bug").model_copy(update={"body": "On 4.x, datetime.datetime breaks parse_url"})
+    model = answer(premises=[
+        {"kind": "version", "value": "4.x", "central": False},
+        {"kind": "symbol", "value": "datetime.datetime", "central": True},
+        {"kind": "symbol", "value": "tinylib.parse_url", "central": True},
+    ])
+    extraction, _, notes = extract(issue, model)
+    assert [p.value for p in extraction.premises] == ["tinylib.parse_url"]
+    assert len(notes) == 2
+
+
+def test_latest_is_no_version_rather_than_a_failure(load_issue):
+    # humanize #136 says "Humanize: latest". That used to fail the whole call three times.
+    extraction, _, _ = extract(load_issue("no_steps"), answer(claimed_version="latest"))
+    assert extraction.claimed_version is None

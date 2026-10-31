@@ -3,6 +3,8 @@
 Rules are tried top to bottom and the first one that fits wins:
 
 1. The repro ran and hit the quoted symptom inside the package: confirmed, high.
+   For wrong output, the reporter's own code printing it counts too, at medium, as long as the
+   text isn't written in the script itself.
 2. A central premise is absent: invalid, high (medium when the revision is a date guess).
 3. The repro ran cleanly against the checked-out package: cannot reproduce, medium
    (high when it was the reporter's own code).
@@ -12,6 +14,8 @@ Rules are tried top to bottom and the first one that fits wins:
 """
 
 from __future__ import annotations
+
+import ast
 
 from bigbrother.schema import (
     Basis,
@@ -54,6 +58,21 @@ def _revision_note(revision: Revision | None) -> list[str]:
     return [f"checked at {revision.sha[:12]}{ref}, picked from {how[revision.source]}"]
 
 
+def _squash(text: str) -> str:
+    return " ".join(text.split()).lower()
+
+
+def _written_in_script(code: str, quote: str) -> bool:
+    """True if the quote sits in a string in the script, so printing it proves nothing. Comments don't count."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return True
+    target = _squash(quote)
+    return any(isinstance(node, ast.Constant) and isinstance(node.value, str) and target in _squash(node.value)
+               for node in ast.walk(tree))
+
+
 def _blocked(run: RunResult | None, extraction: Extraction) -> str | None:
     """Why nothing usable ran, or None if something did."""
     if run is None or run.status == ExecutionStatus.NOT_RUN:
@@ -83,10 +102,29 @@ def decide(
     blocked = _blocked(run, extraction)
 
     # Rule 1. A wrong minor detail never overrides a real reproduction, it's only listed.
-    if blocked is None and run.symptom_matched and run.in_package:
-        hit = f"{run.exception_type}: " if run.exception_type else ""
-        reasons = [f"the repro hit the reported symptom ({hit}{extraction.symptom.quote if extraction.symptom else 'as reported'}) inside the package"]
+    # It needs a symptom quoted from the report: matching nothing proves nothing.
+    if blocked is None and extraction.symptom is not None and run.symptom_matched and run.in_package:
+        quote = extraction.symptom.quote if extraction.symptom else ""
+        hit = quote if run.exception_type is None or quote.startswith(run.exception_type) else f"{run.exception_type}: {quote}"
+        reasons = [f"the repro hit the reported symptom ({hit or run.exception_type or 'as reported'}) inside the package"]
         return Verdict(label=Label.CONFIRMED, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=1,
+                       reasons=reasons + _premise_notes(premises, set()) + context)
+
+    # Rule 1 for wrong output, which has no traceback to place inside the package. Only the
+    # reporter's own code counts, and only if the reported text isn't written in the script.
+    if (
+        blocked is None
+        and extraction.symptom is not None
+        and extraction.symptom.kind == "wrong_output"
+        and run.symptom_matched
+        and repro is not None
+        and repro.origin == "reporter"
+        and not _written_in_script(repro.code, extraction.symptom.quote)
+    ):
+        reasons = [f"the reporter's own code printed the reported output ({extraction.symptom.quote})"]
+        if run.imported_from_checkout is None:
+            reasons.append("couldn't confirm the script used the checked-out package")
+        return Verdict(label=Label.CONFIRMED, confidence=Confidence.MEDIUM, basis=Basis.EVIDENCE, rule=1,
                        reasons=reasons + _premise_notes(premises, set()) + context)
 
     # Rule 2.

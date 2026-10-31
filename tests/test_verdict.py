@@ -53,7 +53,7 @@ CRASHED_AS_REPORTED = {"exit_code": 1, "exception_type": "ValueError", "symptom_
 def test_rule_1_reproduced_is_confirmed():
     verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(**CRASHED_AS_REPORTED), TAG)
     assert (verdict.label, verdict.confidence, verdict.basis, verdict.rule) == (Label.CONFIRMED, Confidence.HIGH, Basis.EVIDENCE, 1)
-    assert "ValueError: URL too long" in verdict.reasons[0]
+    assert "(ValueError: URL too long) inside the package" in verdict.reasons[0]
 
 
 def test_rule_1_wins_over_a_wrong_minor_version_but_lists_it():
@@ -166,3 +166,31 @@ def test_no_revision_skips_rule_2():
     verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], None, None)
     assert verdict.rule == 5
     assert "no revision could be picked" in verdict.reasons
+
+
+def test_no_quoted_symptom_means_nothing_to_confirm():
+    no_symptom = EXTRACTION.model_copy(update={"symptom": None})
+    verdict = decide(no_symptom, [], ran(**CRASHED_AS_REPORTED), TAG)
+    assert verdict.label != Label.CONFIRMED
+
+
+WRONG_OUTPUT = EXTRACTION.model_copy(update={"symptom": Symptom(kind="wrong_output", quote="1000.0 sextillion")})
+PRINTS_IT = ReproScript(code="from humanize import intword\nprint(intword(10**24 - 1))  # '1000.0 sextillion'\n", origin="reporter")
+
+
+def test_reporters_code_printing_the_wrong_output_is_confirmed_at_medium():
+    # humanize #400: a real bug, the comment holding the expected text doesn't count as faking it.
+    verdict = decide(WRONG_OUTPUT, [], ran(symptom_matched=True), TAG, repro=PRINTS_IT)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.CONFIRMED, Confidence.MEDIUM, 1)
+
+
+def test_a_script_that_just_prints_the_text_proves_nothing():
+    fake = ReproScript(code="print('1000.0 sextillion')\n", origin="reporter")
+    verdict = decide(WRONG_OUTPUT, [], ran(symptom_matched=True), TAG, repro=fake)
+    assert verdict.rule == 4
+
+
+def test_a_generated_script_printing_wrong_output_doesnt_confirm():
+    generated = PRINTS_IT.model_copy(update={"origin": "model"})
+    verdict = decide(WRONG_OUTPUT, [], ran(symptom_matched=True), TAG, repro=generated)
+    assert verdict.rule == 4
