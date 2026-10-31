@@ -355,3 +355,19 @@ def test_a_release_tag_gives_the_build_its_version():
 def test_release_version_only_for_plain_tags(ref, version):
     revision = Revision(sha="a" * 40, source=RevisionSource.TAG, ref=ref)
     assert sandbox._release_version(revision) == version
+
+
+def test_tests_run_offline_and_locked_down_with_the_projects_addopts_dropped():
+    command = sandbox.test_command("bb-1-tests", SRC, "bb-1-deps", ["tests/test_a.py"])
+    joined = " ".join(command)
+    for flag in ("--network none", "--read-only", "--cap-drop ALL", "--user 1000:1000", "-o addopts="):
+        assert flag in joined
+    assert command[-1] == "tests/test_a.py"
+
+
+def test_tests_install_the_test_extra_and_pytest(tmp_path):
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n[project.optional-dependencies]\ntests = ["freezegun"]\n')
+    assert sandbox.test_extra(tmp_path) == "tests"
+    script = sandbox.install_script("m", "/src[tests]", ("pytest",))
+    assert "-e '/src[tests]' pytest;" in script
+    assert sandbox.test_extra(tmp_path / "missing") is None

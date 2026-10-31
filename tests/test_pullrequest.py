@@ -174,3 +174,71 @@ def test_a_name_two_modules_define_needs_the_module_named(repo):
     head = commit(path, {"tinylib/b.py": "def install():\n    return 3\n"}, "Change b")
     report = check_pr(pr_for(base, head), path)
     assert report.functions[0].mentions == []  # test_a.py tests a.install, not b.install
+
+
+from bigbrother.pullrequest import local_pr  # noqa: E402
+from bigbrother.schema import ExecutionStatus, RunResult  # noqa: E402
+
+
+def ran(code, line):
+    return RunResult(status=ExecutionStatus.RAN, exit_code=code, stdout=f"..\n{line}\n")
+
+
+class FakeTests:
+    """Answers per side: the overlay is only given at the base."""
+
+    def __init__(self, head, base):
+        self.head, self.base, self.calls = head, base, []
+
+    def __call__(self, repo_dir, sha, files, overlay):
+        self.calls.append((sha, files, sorted(overlay)))
+        return self.base if overlay else self.head
+
+
+def pr_with_a_test(repo):
+    path, base = repo
+    test = TESTS_V1 + '\n\ndef test_parse_url_strips():\n    assert parse_url(" http://a/b ")["scheme"] == "http"\n'
+    head = commit(path, {**change_parse_url(path), "tests/test_urls.py": test.replace("import parse_query", "import parse_query, parse_url")}, "Strip")
+    return pr_for(base, head)
+
+
+def test_failing_before_and_passing_after_proves_the_tests_check_it(repo):
+    pr = pr_with_a_test(repo)
+    tests = FakeTests(head=ran(0, "2 passed in 0.01s"), base=ran(1, "1 failed, 1 passed in 0.02s"))
+    report = check_pr(pr, repo[0], run_tests=tests)
+
+    assert report.label == Coverage.TESTED
+    assert tests.calls == [(pr.head_sha, ["tests/test_urls.py"], []), (pr.base_sha, ["tests/test_urls.py"], ["tests/test_urls.py"])]
+    assert report.reasons[0] == ("tests/test_urls.py fails without the change (1 failed, 1 passed in 0.02s) and passes with it "
+                                 "(2 passed in 0.01s), so the PR's tests check the change")
+    assert "Tests at the base, without it: 1 failed" in summary(report)
+
+
+def test_passing_both_ways_is_said_plainly(repo):
+    report = check_pr(pr_with_a_test(repo), repo[0], run_tests=FakeTests(head=ran(0, "2 passed"), base=ran(0, "2 passed")))
+    assert report.label == Coverage.TESTED  # the names still match, the run adds the caveat
+    assert "passes with and without the change" in report.reasons[0]
+
+
+def test_tests_failing_at_the_head_win_and_the_base_isnt_run(repo):
+    tests = FakeTests(head=ran(1, "1 failed, 1 passed"), base=None)
+    report = check_pr(pr_with_a_test(repo), repo[0], run_tests=tests)
+    assert report.label == Coverage.TESTS_FAIL and len(tests.calls) == 1 and report.base_run is None
+
+
+def test_no_test_files_means_nothing_runs(repo):
+    path, base = repo
+    head = commit(path, change_parse_url(path), "Strip")
+    tests = FakeTests(head=None, base=None)
+    report = check_pr(pr_for(base, head), path, run_tests=tests)
+    assert tests.calls == [] and report.tests_run == []
+
+
+def test_a_local_branch_needs_no_github(repo):
+    path, base = repo
+    commit(path, change_parse_url(path), "Strip")
+    pr = local_pr(path, base, "HEAD")
+    report = check_pr(pr, path)
+    assert pr.url == "" and report.label == Coverage.NO_TEST
+    text = summary(report)
+    assert "github.com" not in text and "tinylib/urls.py:4" in text and f"--base {base[:12]}" in text

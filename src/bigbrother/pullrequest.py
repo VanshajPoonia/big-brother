@@ -1,9 +1,12 @@
 """Check a pull request: does a test in the PR cover the code it changes?
 
-No model and no run. The PR's diff gives the changed lines, the code at the PR's head gives the
-functions holding them, and the tests the PR adds or changes either name each function or they
-don't. Older tests that name it are listed too, but they were written before the change, so they
-don't count. Every answer points at a file and line.
+No model. The PR's diff gives the changed lines, the code at the PR's head gives the functions
+holding them, and the tests the PR adds or changes either use each function or they don't. Older
+tests that use it are listed too, but they were written before the change, so they don't count.
+Every answer points at a file and line.
+
+With a sandbox, the PR's test files also run: at the head, then at the base with the PR's test
+files copied in. Failing before the change and passing after is the proof that they test it.
 """
 
 from __future__ import annotations
@@ -19,6 +22,8 @@ from pydantic import BaseModel, Field
 
 from bigbrother import __version__
 from bigbrother.ingest import API, _headers
+from bigbrother.redact import redact
+from bigbrother.schema import ExecutionStatus, RunResult
 
 PR_URL = re.compile(r"^https?://(?:www\.)?github\.com/(?P<repo>[\w.-]+/[\w.-]+)/pulls?/(?P<number>\d+)/?(?:[?#].*)?$")
 HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(?P<start>\d+)(?:,(?P<count>\d+))? @@")
@@ -33,6 +38,7 @@ class Coverage(StrEnum):
     PARTLY = "partly tested"
     NO_TEST = "no test for this change"
     NO_CODE = "no function changed"
+    TESTS_FAIL = "tests fail"
 
 
 MEANING = {
@@ -40,11 +46,12 @@ MEANING = {
     Coverage.PARTLY: "some functions this PR changes are used in a test the PR adds or changes, others aren't",
     Coverage.NO_TEST: "no test the PR adds or changes uses a function it changes",
     Coverage.NO_CODE: "no function in the package changed",
+    Coverage.TESTS_FAIL: "the PR's own tests fail at its head",
 }
 
 
 class PullRequest(BaseModel):
-    url: str
+    url: str  # empty for a local branch
     repo: str
     number: int
     title: str
@@ -75,6 +82,9 @@ class PrReport(BaseModel):
     functions: list[ChangedFunction] = Field(default_factory=list)
     tests_changed: list[str] = Field(default_factory=list)
     outside_functions: list[str] = Field(default_factory=list)
+    tests_run: list[str] = Field(default_factory=list)
+    head_run: RunResult | None = None
+    base_run: RunResult | None = None
 
 
 def _git(repo_dir: Path, *args: str) -> str:
@@ -103,6 +113,12 @@ def fetch_pr(url: str, client: httpx.Client | None = None) -> PullRequest:
             client.close()
     return PullRequest(url=f"https://github.com/{repo}/pull/{number}", repo=repo, number=number, title=data["title"],
                        base_sha=data["base"]["sha"], head_sha=data["head"]["sha"])
+
+
+def local_pr(repo_dir: Path, base: str, head: str = "HEAD") -> PullRequest:
+    """A branch in a local clone, checked like a PR. Nothing goes online."""
+    base_sha, head_sha = (_git(repo_dir, "rev-parse", "--verify", f"{ref}^{{commit}}").strip() for ref in (base, head))
+    return PullRequest(url="", repo="", number=0, title=f"{head} against {base}", base_sha=base_sha, head_sha=head_sha)
 
 
 def fetch_commits(repo_dir: Path, pr: PullRequest) -> None:
@@ -234,7 +250,39 @@ def changed_tests(repo_dir: Path, sha: str, touched: dict[str, set[int]]) -> dic
     return spans
 
 
-def check_pr(pr: PullRequest, repo_dir: Path) -> PrReport:
+def _outcome(run: RunResult) -> str:
+    """pytest's own last line, like "1 failed, 3 passed in 0.12s", or what stopped it."""
+    if run.status != ExecutionStatus.RAN:
+        return {ExecutionStatus.INSTALL_FAILED: "the package didn't install", ExecutionStatus.TIMEOUT: "the tests timed out"}.get(
+            run.status, "the sandbox failed")
+    lines = [line.strip("= ") for line in run.stdout.strip().splitlines() if line.strip()]
+    return lines[-1] if lines else f"pytest exit code {run.exit_code}"
+
+
+def _passed(run: RunResult | None) -> bool:
+    return run is not None and run.status == ExecutionStatus.RAN and run.exit_code == 0
+
+
+def _failed(run: RunResult | None) -> bool:
+    # 1 is failing tests, 2 a collection error, like importing a function the base doesn't have yet.
+    return run is not None and run.status == ExecutionStatus.RAN and run.exit_code in (1, 2)
+
+
+def run_pr_tests(pr: PullRequest, repo_dir: Path, tests_changed: list[str], run_tests) -> tuple[list[str], RunResult | None, RunResult | None]:
+    """Run the PR's test files at its head, then at its base with those files copied in."""
+    files = [p for p in tests_changed if Path(p).name.startswith("test_") and p.endswith(".py") or p.endswith("_test.py")]
+    present = set(_git(repo_dir, "ls-tree", "-r", "--name-only", pr.head_sha).splitlines())
+    files = [p for p in files if p in present]
+    if not files:
+        return [], None, None
+    head = run_tests(repo_dir, pr.head_sha, files, {})
+    if not _passed(head):
+        return files, head, None  # the base can't show anything the head doesn't already
+    overlay = {p: _git(repo_dir, "show", f"{pr.head_sha}:{p}") for p in tests_changed if p in present}
+    return files, head, run_tests(repo_dir, pr.base_sha, files, overlay)
+
+
+def check_pr(pr: PullRequest, repo_dir: Path, run_tests=None) -> PrReport:
     diff = _git(repo_dir, "diff", "--unified=0", "--no-color", "--no-ext-diff", f"{pr.base_sha}...{pr.head_sha}", "--", "*.py")
     touched = changed_lines(diff)
     tests_changed = sorted(path for path in touched if is_test(path))
@@ -295,28 +343,67 @@ def check_pr(pr: PullRequest, repo_dir: Path) -> PrReport:
         reasons.append("no function in the package's code changed, only lines outside functions or no code at all")
     reasons.append(f"the PR changes {len(tests_changed)} test file{'' if len(tests_changed) == 1 else 's'}"
                    + (f": {', '.join(tests_changed)}" if tests_changed else ""))
+    files, head_run, base_run = run_pr_tests(pr, repo_dir, tests_changed, run_tests) if run_tests else ([], None, None)
+    head_run, base_run = (r and r.model_copy(update={"commands": [redact(c) for c in r.commands], "stdout": redact(r.stdout),
+                                                     "stderr": redact(r.stderr)}) for r in (head_run, base_run))
+    if files:
+        shown = ", ".join(files)
+        one = len(files) == 1
+        fail, passes = ("fails", "passes") if one else ("fail", "pass")
+        if head_run.status != ExecutionStatus.RAN:
+            reasons.insert(0, f"couldn't run {shown}: {_outcome(head_run)}")
+        elif not _passed(head_run):
+            label = Coverage.TESTS_FAIL
+            reasons.insert(0, f"{shown} {fail} at the PR's head ({_outcome(head_run)})")
+        elif _failed(base_run):
+            label = Coverage.TESTED  # running them beats reading names
+            reasons.insert(0, f"{shown} {fail} without the change ({_outcome(base_run)}) and {passes} with it "
+                              f"({_outcome(head_run)}), so the PR's tests check the change")
+        elif _passed(base_run):
+            reasons.insert(0, f"{shown} {passes} with and without the change ({_outcome(head_run)}), "
+                              f"so {'it doesn' if one else 'they don'}'t show the change is tested")
+        else:
+            reasons.insert(0, f"{shown} {passes} at the PR's head ({_outcome(head_run)}), but couldn't run at the base: "
+                              f"{_outcome(base_run)}")
     return PrReport(tool_version=__version__, pr=pr, label=label, reasons=reasons, functions=changed,
-                    tests_changed=tests_changed, outside_functions=outside)
+                    tests_changed=tests_changed, outside_functions=outside, tests_run=files,
+                    head_run=head_run, base_run=base_run)
+
+
+def _tail(text: str, lines: int = 15) -> str:
+    return "\n".join(text.strip().splitlines()[-lines:])
 
 
 def summary(report: PrReport, heading: bool = True) -> str:
     pr = report.pr
-    lines = [f"# {pr.title}", "", pr.url, ""] if heading else []
+
+    def where(path: str, line: int) -> str:
+        if not pr.url:
+            return f"{path}:{line}"
+        return f"[{path}:{line}](https://github.com/{pr.repo}/blob/{pr.head_sha}/{path}#L{line})"
+
+    lines = [f"# {pr.title}", "", pr.url, ""] if heading and pr.url else [f"# {pr.title}", ""] if heading else []
+    how = "it ran the PR's tests in the offline sandbox, and read" if report.tests_run else "this comes from"
     lines += [f"**{report.label.value}**: {MEANING[report.label]}", "",
-              "No model and no run: this comes from the PR's diff and the tests at its head.", "",
+              f"No model: {how} the PR's diff and the tests at its head.", "",
               "## Why", *[f"- {reason}" for reason in report.reasons]]
     if report.functions:
         lines += ["", "## Changed functions", "", "| Function | Where | A test that uses it |", "| --- | --- | --- |"]
         for f in report.functions:
-            where = f"[{f.path}:{f.line}](https://github.com/{pr.repo}/blob/{pr.head_sha}/{f.path}#L{f.line})"
             if f.mentions:
                 m = f.mentions[0]
                 whose = "in this PR" if m.in_pr else "older test"
-                test = f"{whose}: [{m.path}:{m.line}](https://github.com/{pr.repo}/blob/{pr.head_sha}/{m.path}#L{m.line}) `{m.text}`"
+                test = f"{whose}: {where(m.path, m.line)} `{m.text}`"
             else:
                 test = "none"
-            lines.append(f"| `{f.name}` | {where} | {test} |")
+            lines.append(f"| `{f.name}` | {where(f.path, f.line)} | {test} |")
     if report.outside_functions:
         lines += ["", "## Changed outside functions", *[f"- {o}" for o in report.outside_functions]]
-    lines += ["", f"Rerun: `bigbrother pr {pr.url}`", "", f"bigbrother {report.tool_version}, checked {pr.base_sha[:12]}...{pr.head_sha[:12]}"]
+    for side, run in (("head, with the change", report.head_run), ("base, without it", report.base_run)):
+        if run is None:
+            continue
+        lines += ["", f"<details><summary>Tests at the {side}: {_outcome(run)}</summary>", "", "```",
+                  _tail(run.stdout or run.stderr), "```", "", *[f"- `{c}`" for c in run.commands], "</details>"]
+    rerun = f"bigbrother pr {pr.url}" if pr.url else f"bigbrother pr --base {pr.base_sha[:12]} --head {pr.head_sha[:12]}"
+    lines += ["", f"Rerun: `{rerun}`", "", f"bigbrother {report.tool_version}, checked {pr.base_sha[:12]}...{pr.head_sha[:12]}"]
     return "\n".join(lines) + "\n"

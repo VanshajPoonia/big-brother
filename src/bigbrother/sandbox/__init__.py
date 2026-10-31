@@ -20,15 +20,22 @@ import tarfile
 import tempfile
 import threading
 import time
+import tomllib
 import uuid
 from pathlib import Path
 
 from bigbrother.schema import OUTPUT_CAP, ExecutionStatus, ReproScript, Revision, RunResult, Symptom
 
 IMAGE = "bigbrother-sandbox:0.1"
-DOCKER_DIR = Path(__file__).resolve().parents[3] / "docker"
+_HERE = Path(__file__).resolve()
+# docker/ at the repo root, or the copy inside an installed package (see pyproject.toml).
+DOCKER_DIR = next((d for d in (_HERE.parents[1] / "docker", _HERE.parents[3] / "docker") if (d / "Dockerfile").exists()),
+                  _HERE.parents[3] / "docker")
 INSTALL_TIMEOUT = 300
 RUN_TIMEOUT = 60
+TEST_TIMEOUT = 180
+# Optional dependency groups that usually hold what a project's tests need.
+TEST_EXTRAS = ("tests", "test", "testing", "dev")
 BUILD_TIMEOUT = 600
 # Lines of install output kept when the install times out.
 TAIL_LINES = 50
@@ -56,20 +63,21 @@ class SandboxError(Exception):
     """Docker itself failed, not the repo or the script."""
 
 
-def install_script(marker: str) -> str:
+def install_script(marker: str, target: str = "/src", also: tuple[str, ...] = ()) -> str:
     # After a good install, the marker line and `uv pip freeze` go to stdout.
     # The build writes files like *.egg-info into /src as uid 1000. The chmod lets
     # the host user delete them afterwards, so it runs even when the install fails.
     return (
         "uv venv /deps/venv --python /usr/local/bin/python3"
-        " && uv pip install --python /deps/venv/bin/python -e /src;"
+        f" && uv pip install --python /deps/venv/bin/python {shlex.join(['-e', target, *also])};"
         f" status=$?; if [ $status -eq 0 ]; then echo {marker}; uv pip freeze --python /deps/venv/bin/python; fi;"
         " chmod -R a+rwX /src 2>/dev/null; exit $status"
     )
 
 
 def install_command(
-    name: str, src: Path, volume: str, marker: str, image: str = IMAGE, version: str | None = None
+    name: str, src: Path, volume: str, marker: str, image: str = IMAGE, version: str | None = None,
+    target: str = "/src", also: tuple[str, ...] = (),
 ) -> list[str]:
     # Network on, only the exported source and the volume. The one environment variable is a
     # version: packages that read theirs from git (setuptools-scm, hatch-vcs) fail without .git.
@@ -78,7 +86,7 @@ def install_command(
         "--cpus", "1", "--memory", "1g", "--pids-limit", "256",
         "--mount", f"type=bind,source={src},target=/src",
         "--mount", f"type=volume,source={volume},target=/deps",
-        image, "sh", "-c", install_script(marker),
+        image, "sh", "-c", install_script(marker, target, also),
     ]  # fmt: skip
 
 
@@ -407,3 +415,97 @@ def _reproduce(
         imported_from_checkout=from_checkout,
         **env,
     )
+
+
+def test_command(name: str, src: Path, volume: str, files: list[str], image: str = IMAGE) -> list[str]:
+    """pytest on the given files, locked down like a repro run. The project's own addopts are
+    dropped, since they often need plugins that aren't installed."""
+    return [
+        "docker", "run", "--name", name,
+        "--network", "none", "--read-only", "--tmpfs", "/tmp:size=64m",
+        "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+        "--user", "1000:1000", "--pids-limit", "128", "--memory", "1g", "--cpus", "1",
+        "-e", "PYTHONDONTWRITEBYTECODE=1",
+        "--mount", f"type=bind,source={src},target=/src,readonly",
+        "--mount", f"type=volume,source={volume},target=/deps,readonly",
+        "--workdir", "/src",
+        image, "/deps/venv/bin/python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-o", "addopts=", *files,
+    ]  # fmt: skip
+
+
+def test_extra(src: Path) -> str | None:
+    """The optional dependency group with the project's test requirements, if it declares one."""
+    try:
+        extras = tomllib.loads((src / "pyproject.toml").read_text(encoding="utf-8")).get("project", {}).get("optional-dependencies", {})
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    return next((name for name in TEST_EXTRAS if name in extras), None)
+
+
+def run_tests(repo_dir: Path, sha: str, files: list[str], overlay: dict[str, str] | None = None,
+              version: str | None = None) -> RunResult:
+    """Run test files at `sha`, with `overlay` files written over the tree first: that's how a PR's
+    new tests run against the code from before the PR. exit_code is pytest's."""
+    started = time.monotonic()
+    commands: list[str] = []
+    run_id = uuid.uuid4().hex[:12]
+    marker = f"bigbrother-{uuid.uuid4().hex}"
+    names = {"install": f"bb-{run_id}-install", "run": f"bb-{run_id}-tests", "volume": f"bb-{run_id}-deps"}
+    with tempfile.TemporaryDirectory(prefix="bigbrother-", ignore_cleanup_errors=True) as tmp:
+        try:
+            result = _run_tests(Path(tmp), Path(repo_dir), sha, files, overlay or {}, version, names, marker, commands)
+        except Exception as error:
+            result = RunResult(status=ExecutionStatus.SANDBOX_ERROR, stderr=f"{type(error).__name__}: {error}")
+        finally:
+            _cleanup(["docker", "rm", "-f", names["install"], names["run"]], commands)
+            _cleanup(["docker", "volume", "rm", "-f", names["volume"]], commands)
+    return result.model_copy(update={"commands": commands, "duration_s": round(time.monotonic() - started, 2)})
+
+
+def _run_tests(work: Path, repo_dir: Path, sha: str, files: list[str], overlay: dict[str, str], version: str | None,
+               names: dict[str, str], marker: str, commands: list[str]) -> RunResult:
+    os.chmod(work, 0o755)
+    src = work / "src"
+    src.mkdir()
+    image = ensure_image(commands)
+    env = _image_info(image, commands)
+    export_revision(repo_dir, sha, src, commands)
+    for path, text in overlay.items():
+        target = src / path
+        if not target.resolve().is_relative_to(src.resolve()):
+            raise SandboxError(f"overlay path {path!r} leaves the tree")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+        os.chmod(target, 0o644)
+        for parent in target.parents:
+            if parent == src:
+                break
+            os.chmod(parent, 0o777)
+
+    created = _docker(["docker", "volume", "create", names["volume"]], commands, timeout=60)
+    if created.returncode != 0:
+        raise SandboxError(f"docker volume create failed: {created.stderr.strip()}")
+    extra = test_extra(src)
+    try:
+        install = _docker(install_command(names["install"], src, names["volume"], marker, image, version or FALLBACK_VERSION,
+                                          target=f"/src[{extra}]" if extra else "/src", also=("pytest",)),
+                          commands, INSTALL_TIMEOUT)
+    except subprocess.TimeoutExpired as timeout:
+        _cleanup(["docker", "kill", names["install"]], commands)
+        return RunResult(status=ExecutionStatus.INSTALL_FAILED,
+                         stderr=f"install took longer than {INSTALL_TIMEOUT} seconds, last {TAIL_LINES} lines:\n"
+                                f"{_last_lines(timeout.output, timeout.stderr)}", **env)
+    if install.returncode != 0:
+        return RunResult(status=ExecutionStatus.INSTALL_FAILED, exit_code=install.returncode,
+                         stdout=install.stdout, stderr=install.stderr, **env)
+    _, freeze = split_at_marker(install.stdout, marker)
+    env["packages"] = [line.strip() for line in (freeze or "").splitlines() if line.strip()]
+
+    try:
+        run = _docker(test_command(names["run"], src, names["volume"], files, image), commands, TEST_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        _cleanup(["docker", "kill", names["run"]], commands)
+        return RunResult(status=ExecutionStatus.TIMEOUT, stderr=f"the tests ran longer than {TEST_TIMEOUT} seconds", **env)
+    if run.returncode in (125, 126, 127):
+        return RunResult(status=ExecutionStatus.SANDBOX_ERROR, exit_code=run.returncode, stderr=run.stderr, **env)
+    return RunResult(status=ExecutionStatus.RAN, exit_code=run.returncode, stdout=run.stdout, stderr=run.stderr, **env)
