@@ -36,9 +36,9 @@ If the live demo fails, show the saved reports in `examples/`, or rerun one with
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end.
 
-- 7 of 11 right, about a minute each.
+- 8 of 11 right, about a minute each.
 - All 4 real bugs confirmed, and every confirmed was a real bug. We never said invalid when it wasn't.
-- All 4 real invalid reports came back as cannot reproduce. Real invalid reports are misunderstandings, an old version, a script named `select.py`. Our invalid check finds missing functions, and real people rarely make that mistake. Fake AI reports do.
+- Real invalid reports are rarely about missing functions. That's a fake-AI-report mistake. One was a reporter whose script was named `select.py`, hiding Python's own `select` module. Their own traceback shows both their file and the error, so we catch that now. The other 3 were misunderstandings and an old install, and we still miss them.
 - Reporters often forget an import in their snippet. Qwen now repairs it once, and if it only added imports we still count it as the reporter's code. On toolz #99 the repair imported a function the reporter had only proposed, so we check every name it adds against the real source first. That bug from 2013 is now confirmed.
 - We also tried letting Qwen tag feature requests. It called all 11 reports bugs, so we dropped it rather than let the model guess.
 
@@ -62,10 +62,10 @@ The issue is marked as untrusted data in the prompt and can't close its own bloc
 Docker with no network, a read-only filesystem, no capabilities, a non-root user, and limits on memory, processes and time. Installing has network access, running doesn't.
 
 **How accurate is it?**
-7 of 11 on real closed issues. All 4 real bugs confirmed, confirmed is never wrong, and false invalid is zero. It misses real invalid reports.
+8 of 11 on real closed issues. All 4 real bugs confirmed, confirmed is never wrong, and false invalid is zero. It catches 1 of 4 real invalid reports.
 
 **What does it get wrong?**
-Invalid reports that are misunderstandings or old versions. Wrong-output bugs only confirm at medium, and only from the reporter's own code. Python only.
+Invalid reports that are misunderstandings or old versions. We'd rather say cannot reproduce than call a real bug invalid. Wrong-output bugs only confirm at medium, and only from the reporter's own code. Python only.
 
 **What if the install fails?**
 It says so and falls back to cannot reproduce, marked as a fallback. One flag changes that fallback label.
