@@ -59,7 +59,8 @@ Accuracy over the 3 labels with blocked cases counted, per-label precision and r
 
 - **In:** issues on Python projects, the CLI, the 3 labels, the eval.
 - **Stretch, decided at 3:30 AM:** PR fail-to-pass check, SARIF output, OSV lookup for security claims. See [archive/plan-v1-original.md](archive/plan-v1-original.md).
-- **Roadmap:** GitHub App, other languages via tree-sitter, Firecracker sandbox.
+- **Built after 3:30 AM:** the PR check, the bot on our demo repo, scripts for reports with no code.
+- **Roadmap:** a hosted GitHub App, other languages via tree-sitter, Firecracker sandbox.
 
 ## Sources
 

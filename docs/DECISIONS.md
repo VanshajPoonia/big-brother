@@ -74,3 +74,12 @@ On tqdm #1477 the reporter's script was named `select.py`, so Python loaded it i
 **1 Nov, 3:15 AM. Catch reports from an old install.**
 rich #2465 says "Console has no attribute save_svg". At the code from the issue date, `Console.save_svg` is defined in `rich/console.py`, and git history shows it first shipped in 12.1.0 on 3 Apr 2022, four months before the report. Rich's changelog agrees, and the maintainer told the reporter to upgrade. The check needs every step to hold: the report names the owner, that same class or module defines the name, the release came out before the report, and a version the reporter gave is older than that release. It needs no model, and a real reproduction still wins. 9 of 11.
 
+
+**1 Nov, 3:35 AM. Qwen writes a script when the report has no code.**
+Reports that only describe a bug used to fall back with nothing run. Now, if the report quotes an exception and names the package, Qwen writes a short script from the description. It passes the same safety check as a repair and must import the package. It counts for less than the reporter's own code: confirmed at medium at most, and a clean run is cannot reproduce at low. On arrow #896 Qwen wrote exactly the reporter's two unfenced lines, which ran cleanly at 0.17.0.
+
+**1 Nov, 3:40 AM. The PR check counts only the PR's own tests.**
+The first version counted any test naming a changed function, so rich #3915 looked covered because an old test imports `install`. Old tests were written before the change, so they can't show the change is tested. Now only tests the PR adds or changes count, including a new parametrize case. Imports don't count as use, a constructor is found by its class name, and when two modules define the same name the test must name the module. No model, nothing run. Running the PR's tests on its base and head stays on the roadmap.
+
+**1 Nov, 3:45 AM. A bot from the laptop, commenting only on our demo repo.**
+The problem asks for a GitHub App. A hosted App needs a public server, and the model has to stay on this machine, so `bigbrother watch` polls a repo and comments like an App would on a webhook. The repos it may comment on are fixed in `bot.py`, not read from a flag, and checked before anything runs, so it can't comment on a real project.

@@ -1,0 +1,103 @@
+{
+  "tool_version": "0.1.0",
+  "pr": {
+    "url": "https://github.com/Textualize/rich/pull/3906",
+    "repo": "Textualize/rich",
+    "number": 3906,
+    "title": "feat: Traceback - Expose more locals rendering options",
+    "base_sha": "7a4a7a614b4893a8197d06800b241c2c28036ad4",
+    "head_sha": "c69f3cc46812036eb0aaf4dd267e0463cbdfe17c"
+  },
+  "label": "no test for this change",
+  "reasons": [
+    "`render_scope` (rich/scope.py:14) changed, and no test uses it at all",
+    "`install` (rich/traceback.py:84) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_traceback.py:24, but they were written before this change",
+    "`Traceback.__init__` (rich/traceback.py:295) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_traceback.py:67, but they were written before this change",
+    "`Traceback.from_exception` (rich/traceback.py:353) changed, and no test this PR adds or changes uses it. Older tests do, like tests/test_traceback.py:325, but they were written before this change",
+    "`Traceback.extract` (rich/traceback.py:433) changed, and no test uses it at all",
+    "`Traceback._render_stack` (rich/traceback.py:768) changed, and no test uses it at all. It's private, so a test may reach it through a public function",
+    "the PR changes 0 test files"
+  ],
+  "functions": [
+    {
+      "path": "rich/scope.py",
+      "name": "render_scope",
+      "line": 14,
+      "changed_lines": 6,
+      "mentions": []
+    },
+    {
+      "path": "rich/traceback.py",
+      "name": "install",
+      "line": 84,
+      "changed_lines": 6,
+      "mentions": [
+        {
+          "path": "tests/test_traceback.py",
+          "line": 24,
+          "text": "old_handler = install(console=console)",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/traceback.py",
+      "name": "Traceback.__init__",
+      "line": 295,
+      "changed_lines": 4,
+      "mentions": [
+        {
+          "path": "tests/test_traceback.py",
+          "line": 67,
+          "text": "tb = Traceback()",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_traceback.py",
+          "line": 73,
+          "text": "tb = Traceback()",
+          "in_pr": false
+        },
+        {
+          "path": "tests/test_traceback.py",
+          "line": 89,
+          "text": "tb = Traceback()",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/traceback.py",
+      "name": "Traceback.from_exception",
+      "line": 353,
+      "changed_lines": 7,
+      "mentions": [
+        {
+          "path": "tests/test_traceback.py",
+          "line": 325,
+          "text": "trace = Traceback.from_exception(exc_type, exc_value, traceback).trace",
+          "in_pr": false
+        }
+      ]
+    },
+    {
+      "path": "rich/traceback.py",
+      "name": "Traceback.extract",
+      "line": 433,
+      "changed_lines": 3,
+      "mentions": []
+    },
+    {
+      "path": "rich/traceback.py",
+      "name": "Traceback._render_stack",
+      "line": 768,
+      "changed_lines": 2,
+      "mentions": []
+    }
+  ],
+  "tests_changed": [],
+  "outside_functions": [
+    "rich/scope.py: 1 changed line outside any function",
+    "rich/traceback.py: 3 changed lines outside any function"
+  ]
+}

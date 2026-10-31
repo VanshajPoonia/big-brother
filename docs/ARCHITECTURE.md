@@ -12,12 +12,16 @@ issue (title + body only, never comments or labels)
   3 premises    version and symbol checks: present / absent / unknown / error
   4 reproduce   the reporter's own Python blocks. If they fail on their own mistake
                 outside the package (NameError, ImportError), Qwen call 2 repairs
-                them once. Install with network, then run offline, both in Docker
+                them once. A report with no code that quotes an exception gets a
+                script from Qwen call 2 instead, trusted less. Install with network,
+                then run offline, both in Docker
   5 decide      fixed rules: label, confidence, basis
   6 output      report.json (with every model answer) and report.md
 ```
 
-Pull requests (stretch): run the PR's changed tests on the base and head commits.
+Pull requests, `bigbrother pr`: no model and no run. The diff gives the changed lines, `ast` at the PR's head gives the functions holding them, and `git grep` finds test lines that use each one. Only tests the PR adds or changes count, including a new parametrize case on a test. Older tests are listed but were written before the change. The label is `tested`, `partly tested`, `no test for this change` or `no function changed`. Imports don't count as use, a method's test file must name its class, a constructor is found by its class name, and when two modules define the same name the test file must name the module.
+
+The bot, `bigbrother watch`: polls our demo repo and comments each new issue and PR with its report and label, like a GitHub App would on a webhook. The model stays on this machine. Comments only go to the repos in `DEMO_REPOS` in `bot.py`, fixed in the code, and that check runs before anything else. Labels are read only to skip what's done, never passed to the verdict.
 
 ## Components
 
@@ -25,7 +29,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 | --- | --- | --- |
 | Model runtime | Ollama by default. `BIGBROTHER_API=llamacpp` talks to any server on this machine with llama.cpp's `/v1/chat/completions` API (llama.cpp, vLLM, LM Studio, Ollama). Any other host is refused | Locking to one server breaks on machines that run another |
 | Model | `qwen3:4b` (about 2.5 GB, runs on CPU), thinking off, temperature 0, fixed seed | It only fills small schema-checked JSON and repairs one broken snippet, and rules pick the label. 8B needs about twice the memory |
-| Model calls | At most 2 per issue: read the issue, and one repair if the reporter's script breaks on its own. Reports with no code aren't given a model-written script | An agent loop lets the model pick actions. We don't want that, and we don't need it |
+| Model calls | At most 2 per issue: read the issue, then either one repair if the reporter's script breaks on its own, or one script if the report has no code but quotes an exception | An agent loop lets the model pick actions. We don't want that, and we don't need it |
 | Schemas | Pydantic v2 | One model gives the JSON schema Ollama enforces and validates the answer. Up to 2 retries |
 | Issue data | GitHub REST API via `httpx`, optional token in `.env` | Comments contain the answer, so we never read them |
 | Repos | Full clones, cached locally | Partial clones fetch missing blobs over the network during history checks |
@@ -34,12 +38,13 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 | Sandbox | Docker, called with exact flags through `subprocess` | The exact command goes into the evidence. gVisor and Firecracker don't run on macOS |
 | Installs | `uv pip install` | Much faster than pip across 15 eval repos |
 | Verdict | Fixed Python rules | Explainable and unit-tested. A model or classifier would guess |
-| Interface | CLI: `check`, `eval`, `doctor` | A GitHub App needs webhooks, a public URL and auth. It's on the roadmap |
+| Interface | CLI: `check`, `pr`, `eval`, `doctor`, and `watch` as the bot | A hosted GitHub App needs a public server, and the model must stay on this machine. `watch` does the same job from a laptop |
 | Tests | pytest, a fake model replaying saved Qwen responses, a real Docker test in CI | Pulling a model in CI is slow and proves nothing the saved runs don't |
 
 ## Evidence rules
 
 - The symptom is quoted from the report (it must appear in the title or body) and frozen before any script is written.
+- A script Qwen writes for a report with no code passes the same check and must import the package. It's never repaired.
 - A repaired script is rejected if it raises, asserts, exits, catches exceptions or contains the reported text. If the repair only added imports or dropped lines, the code that ran is still the reporter's, and it's treated that way. Names the repair imports that the package doesn't have at that revision (checked with the premise index) are taken out first, with the lines that use them unless the script defines them. The reporter's own imports are never touched.
 - A failure only counts if the traceback has a frame inside the checked-out package.
 - The import check confirms the package comes from the checkout (`__file__` under `/src`).
@@ -52,11 +57,11 @@ Applied top to bottom. Every report also records the revision, how it was picked
 
 | # | Situation | Label | Confidence |
 | --- | --- | --- | --- |
-| 1 | Repro ran and hit the quoted symptom inside the package | `confirmed` | high |
+| 1 | Repro ran and hit the quoted symptom inside the package | `confirmed` | high, medium when Qwen wrote the script |
 | 2 | A central premise is `absent` at a revision resolved from a tag or PyPI | `invalid` | high, medium on the date fallback |
 | 2 | Or the report's own traceback shows the reporter's file loaded in place of a real module, like a script named `select.py` | `invalid` | medium |
 | 2 | Or the report says a name is missing that the package defines and shipped in a release before the report, and the reporter's version (if given) is older than that release | `invalid` | medium |
-| 3 | Repro ran cleanly and exercised what the report describes | `cannot reproduce` | medium, high with the reporter's own code |
+| 3 | Repro ran cleanly and exercised what the report describes | `cannot reproduce` | high with the reporter's own code, low when Qwen wrote it |
 | 4 | Repro failed in a different way | `cannot reproduce` | low |
 | 5 | Blocked: install failed, timeout or no steps | `cannot reproduce` | low, basis `fallback` |
 
@@ -92,6 +97,8 @@ Each layer works without the one above it. `bigbrother doctor` says which layer 
 | --- | --- |
 | Model calls | Never. `local_only` in `extract/model.py` refuses any host that isn't localhost before a request is sent. Proxy settings are ignored and redirects aren't followed |
 | Reading the issue | GitHub REST API, title and body only |
+| Pull requests | GitHub REST API for the base and head commits, then `git fetch` of the PR's head |
+| Bot comments | GitHub REST API, only to the repos in `DEMO_REPOS` |
 | Repo | `git clone` from GitHub, then cached |
 | Install container | PyPI, to install the package at the checked revision |
 | Repro run | Never. `--network none` |
@@ -103,4 +110,4 @@ Each layer works without the one above it. `bigbrother doctor` says which layer 
 
 ## Not now
 
-Watcher bot, SARIF, agent loop, full history scans, OpenVEX, signed evidence, tracing, gVisor, bisect, Hypothesis. Roadmap: GitHub App, Firecracker, other languages via tree-sitter.
+SARIF, agent loop, full history scans, OpenVEX, signed evidence, tracing, gVisor, bisect, Hypothesis, running a PR's tests on its base and head. Roadmap: a hosted GitHub App with a local model per install, Firecracker, other languages via tree-sitter.
