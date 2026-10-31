@@ -14,6 +14,8 @@ from bigbrother.extract import extract
 from bigbrother.extract.code import reporter_script
 from bigbrother.extract.model import Model, ModelError
 from bigbrother.extract.repair import broke_on_its_own, repair
+from bigbrother.extract.write import wanted as write_wanted
+from bigbrother.extract.write import write_script
 from bigbrother.old_install import find_old_install
 from bigbrother.shadowing import find_shadowing
 from bigbrother.schema import (
@@ -141,6 +143,7 @@ def check(
 
     # 4. Run the reporter's code, unless a central premise is already missing.
     run = None
+    can_run = False
     if any(r.premise.central and r.state == CheckState.ABSENT for r in premises):
         notes.append("skipped the run, a central premise doesn't exist")
     elif revision is None:
@@ -148,9 +151,21 @@ def check(
     elif not model_available:
         # Without the model there's no quoted symptom, so a run couldn't show anything either way.
         notes.append("skipped the run, without the model there's no reported symptom to look for")
-    elif script is None:
-        run = RunResult(status=ExecutionStatus.NO_STEPS)
     else:
+        can_run = True
+
+    # 4a. No code in the report: Qwen writes a script from the description, which counts for less.
+    if can_run and script is None and write_wanted(extraction):
+        try:
+            script, call, write_notes = write_script(issue, extraction, model)
+            calls.append(call)
+            notes += write_notes
+        except ModelError as error:
+            notes.append(f"the model couldn't write a script: {error}")
+
+    if can_run and script is None:
+        run = RunResult(status=ExecutionStatus.NO_STEPS)
+    elif can_run:
         try:
             run = reproduce(repo_dir, revision, script, extraction.symptom, extraction.package)
         except Exception as error:  # noqa: BLE001
@@ -158,7 +173,7 @@ def check(
             notes.append(f"the sandbox failed: {error}")
 
     # 4b. One repair if the reporter's script broke on its own, like a missing import.
-    if model_available and script is not None and broke_on_its_own(run):
+    if model_available and script is not None and script.origin == "reporter" and broke_on_its_own(run):
         first_error = run.exception_type
         try:
             fixed, call, repair_notes = repair(script, run, extraction.package, extraction.symptom, model,

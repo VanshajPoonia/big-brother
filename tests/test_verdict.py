@@ -119,9 +119,17 @@ def test_rule_3_reporters_own_code_running_cleanly_is_high():
     assert "reporter's own code ran cleanly" in verdict.reasons[0]
 
 
-def test_rule_3_generated_script_is_medium():
+def test_rule_3_a_script_qwen_wrote_running_cleanly_is_low():
     verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(), TAG, repro=GENERATED)
-    assert (verdict.confidence, verdict.rule) == (Confidence.MEDIUM, 3)
+    assert (verdict.confidence, verdict.rule) == (Confidence.LOW, 3)
+    assert "Qwen wrote" in verdict.reasons[0]
+
+
+def test_rule_1_with_a_script_qwen_wrote_is_medium():
+    crashed = ran(exit_code=1, exception_type="ValueError", symptom_matched=True, in_package=True)
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], crashed, TAG, repro=GENERATED)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.CONFIRMED, Confidence.MEDIUM, 1)
+    assert any("Qwen wrote the script" in r for r in verdict.reasons)
 
 
 def test_rule_3_is_medium_when_the_import_wasnt_checked():

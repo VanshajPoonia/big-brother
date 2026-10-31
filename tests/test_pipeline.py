@@ -188,3 +188,48 @@ def test_a_report_about_a_released_function_is_an_old_install(load_issue, tinyli
 
     assert report.old_install.added_in == "v1.1.0"
     assert (report.verdict.label, report.verdict.rule) == (Label.INVALID, 2)
+
+
+NO_CODE_BODY = "On tinylib 1.1.0, parse_url fails on a URL longer than 255 characters with ValueError: URL too long"
+
+
+def qwen_and_write(code):
+    extract = dict(EXTRACT["real_bug"], has_steps=False)
+    return ReplayModel([
+        ModelCall(step="extract", model="qwen3:4b", request={}, response={"message": {"content": json.dumps(extract)}}),
+        ModelCall(step="repro", model="qwen3:4b", request={}, response={"message": {"content": json.dumps({"code": code})}}),
+    ])
+
+
+def test_a_report_without_code_gets_a_script_from_qwen(load_issue, tinylib_repo):
+    issue = load_issue("real_bug").model_copy(update={"body": NO_CODE_BODY})
+    sandbox = SequenceSandbox(CRASHED)
+    model = qwen_and_write('from tinylib import parse_url\nparse_url("https://example.com/" + "a" * 300)')
+    report = check(issue, tinylib_repo.path, model, reproduce=sandbox, **LANES)
+
+    assert report.repro.origin == "model" and [c.step for c in report.model_calls] == ["extract", "repro"]
+    assert (report.verdict.label, report.verdict.confidence, report.verdict.rule) == (Label.CONFIRMED, "medium", 1)
+    assert any("Qwen wrote a script" in n for n in report.notes)
+
+
+@pytest.mark.parametrize("code", [
+    'raise ValueError("URL too long")',
+    'print("hello")',  # never touches the package
+])
+def test_a_script_qwen_wrote_that_could_fake_it_is_not_run(load_issue, tinylib_repo, code):
+    issue = load_issue("real_bug").model_copy(update={"body": NO_CODE_BODY})
+    sandbox = SequenceSandbox(CRASHED)
+    report = check(issue, tinylib_repo.path, qwen_and_write(code), reproduce=sandbox, **LANES)
+
+    assert sandbox.scripts == []
+    assert (report.verdict.label, report.verdict.rule, report.run.status) == (Label.CANNOT_REPRODUCE, 5, ExecutionStatus.NO_STEPS)
+    assert any("rejected the script Qwen wrote" in n for n in report.notes)
+
+
+def test_a_script_qwen_wrote_is_never_repaired(load_issue, tinylib_repo):
+    issue = load_issue("real_bug").model_copy(update={"body": NO_CODE_BODY})
+    own_error = RunResult(status=ExecutionStatus.RAN, exit_code=1, exception_type="NameError")
+    sandbox = SequenceSandbox(own_error)
+    report = check(issue, tinylib_repo.path, qwen_and_write("import tinylib\nparse_url('x')"), reproduce=sandbox, **LANES)
+
+    assert len(sandbox.scripts) == 1 and report.verdict.rule == 4
