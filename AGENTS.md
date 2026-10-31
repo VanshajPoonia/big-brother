@@ -27,13 +27,15 @@ Only edit your own lane's folders. If you need a change somewhere else, ask that
 
 | Lane | Folders |
 | --- | --- |
-| A Core | `src/bigbrother/schema.py`, `ingest/`, `extract/`, `verdict.py`, `cli.py`, `pyproject.toml`, `tests/conftest.py`, `tests/fixtures/` |
-| B Premises | `src/bigbrother/premises/` |
-| C Sandbox | `src/bigbrother/sandbox/` |
-| D Proof | `src/bigbrother/report/`, `eval/`, `examples/`, `README.md` |
-| 5th account | tests and reviews only, no feature code |
+| A Core (Vanshaj) | `src/bigbrother/schema.py`, `contracts.py`, `extract/`, `verdict.py`, `pipeline.py`, `cli.py`, `pyproject.toml`, `tests/conftest.py`, `tests/fixtures/` |
+| B Ingest and premises (Somya) | `src/bigbrother/ingest/`, `src/bigbrother/premises/` |
+| C Sandbox (Abhijeet) | `src/bigbrother/sandbox/`, `docker/` |
+| D Proof (Vanshaj, Codex) | `src/bigbrother/report/`, `examples/`, `README.md` |
+| Eval data (Radhika) | `eval/cases.yaml`, reviews, no feature code |
 
-`schema.py` is the contract between lanes. Only Lane A changes it, and says so in the group chat.
+`schema.py` and `contracts.py` are the contract between lanes. Only Lane A changes them, and says so in the group chat.
+
+Per-phase prompts for every account are in [docs/PROMPTS.md](docs/PROMPTS.md).
 
 Each lane owns the tests for its folder, in `tests/test_<folder>*.py`. New dependencies go through Lane A.
 

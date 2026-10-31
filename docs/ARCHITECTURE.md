@@ -10,6 +10,7 @@ issue (title + body only, never comments or labels)
   2 extract     Qwen call 1: central claim, premises, symptom quoted from the report
   3 premises    version and symbol checks: present / absent / unknown / error
   4 reproduce   reporter's code if it runs, else Qwen call 2 writes a script
+                from the frozen symptom and source excerpts (one fix round)
                 install with network, then run offline, both in Docker
   5 decide      fixed rules: label, confidence, basis
   6 output      report.json, report.md, evidence/
@@ -23,7 +24,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 | --- | --- | --- |
 | Model runtime | Ollama | llama.cpp needs more setup, LM Studio is a GUI, vLLM needs a GPU |
 | Model | `qwen3:8b`, thinking off, temperature 0, fixed seed | Good at code and JSON, fits 16 GB. Others are weaker at JSON or slower |
-| Model calls | At most 2 per issue, single structured requests | An agent loop lets the model pick actions. We don't want that, and we don't need it |
+| Model calls | At most 3 per issue: extract, write a script, and one fix if the script breaks on its own | An agent loop lets the model pick actions. We don't want that, and we don't need it |
 | Schemas | Pydantic v2 | One model gives the JSON schema Ollama enforces and validates the answer. Up to 2 retries |
 | Issue data | GitHub REST API via `httpx`, optional token in `.env` | Comments contain the answer, so we never read them |
 | Repos | Full clones, cached locally | Partial clones fetch missing blobs over the network during history checks |

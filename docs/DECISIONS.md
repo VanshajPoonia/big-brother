@@ -37,3 +37,12 @@ Maintainers use it when they can't make a bug happen. `invalid` would dismiss re
 
 **31 Oct, 8:50 PM. Stricter evidence.**
 The symptom must be quoted from the report, a failure only counts inside the package, and premise checks can say `unknown`.
+
+**31 Oct, 9:20 PM. Three coders, five accounts.**
+Vanshaj runs Core (Claude Code) and Proof (Codex), Somya takes ingest and premises, Abhijeet the sandbox. Radhika hand-checks eval cases and reviews. Prompts per phase are in PROMPTS.md.
+
+**31 Oct, 9:20 PM. One fix round for generated scripts.**
+Borrowed from Issue2Test: if a script breaks for its own reasons, Qwen gets the error once. At most 3 model calls per issue.
+
+**31 Oct, 9:20 PM. Original plan kept in docs/archive/.**
+We read it again at the 3:30 AM checkpoint and pick stretch work only if everything is green.
