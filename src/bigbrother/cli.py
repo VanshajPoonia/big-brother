@@ -28,6 +28,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=Label.CANNOT_REPRODUCE.value,
         help="label to use when nothing could run (rule 5)",
     )
+
+    evaluate = commands.add_parser("eval", help="score the tool on hand-checked issues")
+    evaluate.add_argument("cases", nargs="?", type=Path, default=Path("eval/cases.yaml"))
+    evaluate.add_argument("--out", type=Path, default=Path("eval/runs/latest"), help="folder for each report and results.md")
+    evaluate.add_argument("--only", nargs="*", help="run only these case ids")
+    evaluate.add_argument(
+        "--blocked-label",
+        choices=[label.value for label in Label],
+        default=Label.CANNOT_REPRODUCE.value,
+        help="label to use when nothing could run (rule 5)",
+    )
     return parser
 
 
@@ -117,8 +128,58 @@ def run_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_eval(args: argparse.Namespace) -> int:
+    import time
+
+    from bigbrother import pipeline
+    from bigbrother.evaluate import load_cases, render, score
+    from bigbrother.extract.model import ModelError, default_model
+    from bigbrother.ingest import ensure_clone, fetch_issue
+    from bigbrother.premises import check_premises, resolve_revision
+    from bigbrother.sandbox import reproduce
+
+    try:
+        cases = load_cases(args.cases)
+        model = default_model()
+    except (OSError, ValueError, ModelError) as error:
+        print(f"bigbrother: {error}", file=sys.stderr)
+        return 2
+    if args.only:
+        cases = [case for case in cases if case.id in args.only]
+
+    reports, seconds = [], []
+    for n, case in enumerate(cases, 1):
+        started = time.monotonic()
+        print(f"[{n}/{len(cases)}] {case.id} ...", file=sys.stderr, flush=True)
+        try:
+            issue = fetch_issue(case.issue_url)
+            repo_dir = ensure_clone(issue.repo, DEFAULT_CACHE)
+            report = pipeline.check(issue, repo_dir, model, resolve_revision=resolve_revision,
+                                    check_premises=check_premises, reproduce=reproduce,
+                                    blocked_label=Label(args.blocked_label))
+            folder = args.out / case.id
+            folder.mkdir(parents=True, exist_ok=True)
+            (folder / "report.json").write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            (folder / "report.md").write_text(summary(report), encoding="utf-8")
+        except Exception as error:  # noqa: BLE001  one bad case must not stop the run
+            print(f"    crashed: {error}", file=sys.stderr)
+            report = None
+        reports.append(report)
+        seconds.append(round(time.monotonic() - started, 1))
+        said = report.verdict.label.value if report else "crashed"
+        print(f"    expected {case.expected.value}, said {said} ({seconds[-1]}s)", file=sys.stderr)
+
+    results = render(score(cases, reports, seconds), list(zip(cases, reports)))
+    args.out.mkdir(parents=True, exist_ok=True)
+    (args.out / "results.md").write_text(results, encoding="utf-8")
+    print(results)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "check":
         return run_check(args)
+    if args.command == "eval":
+        return run_eval(args)
     return 0

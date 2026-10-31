@@ -1,0 +1,79 @@
+# Hand-checked public issues. Each label comes from reading the whole thread, not from the repo's
+# label alone. Big Brother only ever reads the title and body, never these notes or the replies.
+
+- id: humanize-57
+  issue_url: https://github.com/python-humanize/humanize/issues/57
+  repo: python-humanize/humanize
+  expected: confirmed
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: metric(0) raised ValueError on 4.3.0. Fixed in PR #47, released in 4.4.0.
+
+- id: humanize-122
+  issue_url: https://github.com/python-humanize/humanize/issues/122
+  repo: python-humanize/humanize
+  expected: confirmed
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: naturaltime with aware datetimes raised TypeError on 4.7.0. Fixed by PR #123.
+
+- id: humanize-400
+  issue_url: https://github.com/python-humanize/humanize/issues/400
+  repo: python-humanize/humanize
+  expected: confirmed
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: intword prints 1000.0 sextillion. Real bug, closed as a duplicate of #346 which fixes it.
+
+- id: toolz-99
+  issue_url: https://github.com/pytoolz/toolz/issues/99
+  repo: pytoolz/toolz
+  expected: confirmed
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: update_in fails on missing nested keys. Maintainer agreed and asked for a PR.
+
+- id: arrow-1154
+  issue_url: https://github.com/arrow-py/arrow/issues/1154
+  repo: arrow-py/arrow
+  expected: cannot reproduce
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: arrow.utcnow() circular import. Maintainer couldn't reproduce, said it isn't an arrow bug.
+
+- id: arrow-896
+  issue_url: https://github.com/arrow-py/arrow/issues/896
+  repo: arrow-py/arrow
+  expected: cannot reproduce
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: arrow.get missing. Maintainers couldn't reproduce, a dependency did `from arrow import *`.
+
+- id: rich-2988
+  issue_url: https://github.com/Textualize/rich/issues/2988
+  repo: Textualize/rich
+  expected: cannot reproduce
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: Labeled Can't reproduce. Maintainer showed print works with defaultdict and asked for a repro.
+
+- id: rich-3352
+  issue_url: https://github.com/Textualize/rich/issues/3352
+  repo: Textualize/rich
+  expected: invalid
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: rich.console isn't imported by `import rich`, by design. A misunderstanding, not a bug.
+
+- id: rich-2465
+  issue_url: https://github.com/Textualize/rich/issues/2465
+  repo: Textualize/rich
+  expected: invalid
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: save_svg missing because the reporter had an old Rich. Maintainer said to upgrade.
+
+- id: tqdm-1477
+  issue_url: https://github.com/tqdm/tqdm/issues/1477
+  repo: tqdm/tqdm
+  expected: invalid
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: The reporter's script was named select.py, shadowing the stdlib module. Labeled invalid.
+
+- id: humanize-136
+  issue_url: https://github.com/python-humanize/humanize/issues/136
+  repo: python-humanize/humanize
+  expected: invalid
+  checked_by: Claude Code (Vanshaj to recheck)
+  note: intword(1000) gives 1.0 thousand as designed. A feature request, closed as not planned.
