@@ -9,17 +9,29 @@ https://github.com/arrow-py/arrow/issues/1154
 - checked at 8842f8c3263d 1.2.3, picked from the tag
 
 ## What the report relies on
-- symbol `arrow`: present at arrow/__init__.py:1: `from ._version import __version__`
-- symbol `utcnow`: present at arrow/api.py:97: `def utcnow() -> Arrow:`
+- symbol `arrow`: present at [arrow/__init__.py:1](https://github.com/arrow-py/arrow/blob/8842f8c3263d1f1219c189a0500aa67abdd0a214/arrow/__init__.py#L1): `from ._version import __version__`
+- symbol `utcnow`: present at [arrow/api.py:97](https://github.com/arrow-py/arrow/blob/8842f8c3263d1f1219c189a0500aa67abdd0a214/arrow/api.py#L97): `def utcnow() -> Arrow:`
 
 ## What ran
 - status: ran
+
+<details><summary>The script (the reporter's own)</summary>
+
+```python
+import arrow
+utc = arrow.utcnow()
+print(utc)
+```
+</details>
+
+<details><summary>Every command it ran</summary>
+
 - `docker image inspect bigbrother-sandbox:0.1`
 - `docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1`
 - `git -C /Users/vanshajpoonia/.cache/bigbrother/repos/arrow-py__arrow archive --format=tar 8842f8c3263d1f1219c189a0500aa67abdd0a214`
-- `docker volume create bb-7616ce477dd5-deps`
-- `docker run --name bb-7616ce477dd5-install -e SETUPTOOLS_SCM_PRETEND_VERSION=1.2.3 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/src,target=/src --mount type=volume,source=bb-7616ce477dd5-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-1b528bfe377a4ddf840f51bda684a179; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'`
-- `docker run --name bb-7616ce477dd5-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/src,target=/src,readonly --mount type=volume,source=bb-7616ce477dd5-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '"'"'import contextlib, importlib, io, sys
+- `docker volume create bb-bac53d01a48f-deps`
+- `docker run --name bb-bac53d01a48f-install -e SETUPTOOLS_SCM_PRETEND_VERSION=1.2.3 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-2ciijqh6/src,target=/src --mount type=volume,source=bb-bac53d01a48f-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-c113fb64f1ea460e81b6d603fe1278c1; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'`
+- `docker run --name bb-bac53d01a48f-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-2ciijqh6/src,target=/src,readonly --mount type=volume,source=bb-bac53d01a48f-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-2ciijqh6/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '"'"'import contextlib, importlib, io, sys
 try:
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         module = importlib.import_module(sys.argv[1])
@@ -28,8 +40,11 @@ except BaseException:
 path = getattr(module, "__file__", None) or next(iter(getattr(module, "__path__", [])), "")
 print(sys.argv[2])
 print(path)
-'"'"' arrow bigbrother-1b528bfe377a4ddf840f51bda684a179 2>/dev/null; exec /deps/venv/bin/python /repro.py'`
-- `docker rm -f bb-7616ce477dd5-install bb-7616ce477dd5-run`
-- `docker volume rm -f bb-7616ce477dd5-deps`
+'"'"' arrow bigbrother-c113fb64f1ea460e81b6d603fe1278c1 2>/dev/null; exec /deps/venv/bin/python /repro.py'`
+- `docker rm -f bb-bac53d01a48f-install bb-bac53d01a48f-run`
+- `docker volume rm -f bb-bac53d01a48f-deps`
+</details>
+
+Rerun: `bigbrother check https://github.com/arrow-py/arrow/issues/1154`
 
 bigbrother 0.1.0, model qwen3:4b

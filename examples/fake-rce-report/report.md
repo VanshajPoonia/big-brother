@@ -15,4 +15,6 @@ https://github.com/daggers/tinylib/issues/2
 ## Notes
 - skipped the run, a central premise doesn't exist
 
+Rerun: `bigbrother check https://github.com/daggers/tinylib/issues/2`
+
 bigbrother 0.1.0, model qwen3:4b

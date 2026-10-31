@@ -9,11 +9,22 @@ https://github.com/daggers/tinylib/issues/4
 - checked at 3e8250e4290f v1.1.0, picked from the tag
 
 ## What the report relies on
-- symbol `tinylib.parse_url`: present at tinylib/urls.py:4: `def parse_url(url):`
+- symbol `tinylib.parse_url`: present at [tinylib/urls.py:4](https://github.com/daggers/tinylib/blob/3e8250e4290fd41ff4702de1262f6c33ea0f5675/tinylib/urls.py#L4): `def parse_url(url):`
 
 ## What ran
 - status: ran
 - exception: ValueError
+
+<details><summary>The script (the reporter's own)</summary>
+
+```python
+from tinylib import parse_url
+parse_url("https://example.com/" + "a" * 300)
+```
+</details>
+
+<details><summary>Every command it ran</summary>
+
 - `docker image inspect bigbrother-sandbox:0.1`
 - `docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1`
 - `git -C /private/tmp/claude-501/-Users-vanshajpoonia-Code/9f21fef5-4216-4bf1-bb39-a9e4b61d8ef8/scratchpad/e2e/tinylib archive --format=tar 3e8250e4290fd41ff4702de1262f6c33ea0f5675`
@@ -31,5 +42,20 @@ print(path)
 '"'"' tinylib bigbrother-5eb4bf61e4ea4f14aad0475109f17991 2>/dev/null; exec /deps/venv/bin/python /repro.py'`
 - `docker rm -f bb-cf0cc6dde1f2-install bb-cf0cc6dde1f2-run`
 - `docker volume rm -f bb-cf0cc6dde1f2-deps`
+</details>
+
+<details><summary>Last lines of its output</summary>
+
+```
+Traceback (most recent call last):
+  File "/repro.py", line 2, in <module>
+    parse_url("https://example.com/" + "a" * 300)
+  File "/src/tinylib/urls.py", line 6, in parse_url
+    raise ValueError("URL too long")
+ValueError: URL too long
+```
+</details>
+
+Rerun: `bigbrother check https://github.com/daggers/tinylib/issues/4`
 
 bigbrother 0.1.0, model qwen3:4b
