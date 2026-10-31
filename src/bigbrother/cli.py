@@ -95,11 +95,13 @@ def summary(report: Report, heading: bool = True) -> str:
         lines += ["", "## What ran", f"- status: {report.run.status.value}"]
         if report.run.exception_type:
             lines.append(f"- exception: {report.run.exception_type}")
-        lines += [f"- `{c}`" for c in report.run.commands]
         if report.repro:
-            who = "the reporter's code" if report.repro.origin == "reporter" else "a script Qwen wrote"
+            who = "the reporter's own" if report.repro.origin == "reporter" else "written by Qwen"
             lines += ["", f"<details><summary>The script ({who})</summary>", "", "```python",
                       report.repro.code.rstrip(), "```", "</details>"]
+        if report.run.commands:
+            lines += ["", "<details><summary>Every command it ran</summary>", "",
+                      *[f"- `{c}`" for c in report.run.commands], "</details>"]
         if report.run.stderr.strip():
             lines += ["", "<details><summary>Last lines of its output</summary>", "", "```",
                       _tail(report.run.stderr), "```", "</details>"]
