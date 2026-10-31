@@ -17,6 +17,7 @@ from bigbrother.extract.repair import broke_on_its_own, repair
 from bigbrother.extract.write import wanted as write_wanted
 from bigbrother.extract.write import write_script
 from bigbrother.old_install import find_old_install
+from bigbrother.redact import redact
 from bigbrother.shadowing import find_shadowing
 from bigbrother.schema import (
     CheckState,
@@ -195,6 +196,12 @@ def check(
     # 5. Fixed rules pick the label.
     verdict = decide(extraction, premises, run, revision, repro=script, shadowing=shadowing,
                      old_install=old_install, blocked_label=blocked_label)
+
+    # The report may become a public comment: keep this machine's folders out of it.
+    if run is not None:
+        run = run.model_copy(update={"commands": [redact(c) for c in run.commands],
+                                     "stdout": redact(run.stdout), "stderr": redact(run.stderr)})
+    notes = [redact(note) for note in notes]
 
     return Report(
         tool_version=__version__,
