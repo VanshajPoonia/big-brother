@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: How to contribute
+    url: https://github.com/VanshajPoonia/big-brother/blob/main/CONTRIBUTING.md
+    about: Open an issue, get assigned, and agree a plan before a pull request.
+  - name: Try the bot
+    url: https://github.com/VanshajPoonia/big-brother-demo/issues/new
+    about: Open a test report on our demo repo and watch Big Brother answer.

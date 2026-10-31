@@ -4,7 +4,7 @@ Thanks for helping. Every change starts as an issue and ends as a pull request, 
 
 ## 1. Open an issue
 
-Search the [open issues](https://github.com/VanshajPoonia/big-brother/issues) first. If nothing covers it, open one:
+Search the [open issues](https://github.com/VanshajPoonia/big-brother/issues) first. If nothing covers it, open one with the bug or idea template:
 
 - **A bug:** what you ran, what you expected, what happened, and the version (`bigbrother --version`). Paste the command and its full output.
 - **An idea:** the problem it solves for a maintainer, and an example issue or pull request it would get right.
