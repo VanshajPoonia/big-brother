@@ -17,4 +17,6 @@ We are building **Big Brother**. It reads a GitHub issue, pulls out the technica
 ## Models we use and why
 - Qwen3 4B (`qwen3:4b`, Apache-2.0), run locally with Ollama: reads the issue title and body and pulls out the central claim, its premises and the exact symptom, then writes a short reproduction script when the reporter didn't include one. It is good at structured JSON and short code, and small enough (about 2.5 GB) to run on any laptop, even without a GPU. Its output is checked against a schema, and fixed rules pick the label, so a small model is enough.
 
+The model only runs on the same machine as the tool. The code refuses any model host that isn't localhost, so issue text is never sent to another server.
+
 The model never picks the label. Fixed rules do, based on what the checks and the sandbox run show.

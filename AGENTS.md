@@ -16,6 +16,8 @@ A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, 
   ```
 - Fill in the PR template. Name the coding agent and the models.
 - The product only uses `qwen3:4b` through Ollama. No cloud AI inside the code, only open-weight models running locally. Adding a model means updating `HACKATHON.md` in the same PR.
+- The model only runs on this machine. `extract/model.py` refuses any model host that isn't localhost, ignores proxy settings and never follows redirects. Don't add another way to reach a model, and never point `OLLAMA_HOST` or `BIGBROTHER_BASE_URL` at another computer.
+- Only the model is offline. Reading issues from GitHub, `git clone` and `pip install` in the install container may use the network. The repro run uses `--network none`.
 - No secrets in the repo. Put them in `.env`, which is gitignored.
 - Never post issues or comments on real open-source projects. Only on our demo repo.
 - Tests must pass without Ollama. Use the fake model in tests.

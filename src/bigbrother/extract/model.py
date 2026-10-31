@@ -1,11 +1,13 @@
 """Talking to the model, plus a replay model for tests and `--replay`.
 
 Two ways to reach it: Ollama's own API (the default) or the /v1/chat/completions API that
-llama.cpp's llama-server, vLLM, LM Studio and Ollama all serve. Either way the model is open-weight.
+llama.cpp's llama-server, vLLM, LM Studio and Ollama all serve. Either way the model is open-weight
+and runs on this machine: `local_only` refuses any other host before a request is sent.
 """
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import os
 import time
@@ -31,6 +33,27 @@ class Model(Protocol):
     name: str
 
     def chat_json(self, step: str, messages: list[dict], schema: type[T]) -> tuple[T, ModelCall]: ...
+
+
+def local_only(url: str) -> str:
+    """Return `url` if it points at this machine, so issue text never leaves the laptop."""
+    host = httpx.URL(url).host
+    try:
+        ip = ipaddress.ip_address(host)
+        local = ip.is_loopback or ip.is_unspecified
+    except ValueError:
+        local = host == "localhost"
+    if not local:
+        raise ModelError(f"the model must run on this machine, refusing {url or 'an empty host'}")
+    return url
+
+
+def _local_client(base_url: str, client: httpx.Client | None) -> httpx.Client:
+    # trust_env=False so a proxy setting can't route the call off the machine. httpx doesn't
+    # follow redirects unless asked, so a local server can't bounce us elsewhere either.
+    client = client or httpx.Client(base_url=base_url, timeout=300, trust_env=False)
+    local_only(str(client.base_url))
+    return client
 
 
 def ollama_host() -> str:
@@ -85,7 +108,7 @@ class _RetryingModel:
 class OllamaModel(_RetryingModel):
     def __init__(self, name: str | None = None, client: httpx.Client | None = None):
         self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
-        self.client = client or httpx.Client(base_url=ollama_host(), timeout=300)
+        self.client = _local_client(ollama_host(), client)
 
     def _send(self, messages, schema):
         request = {
@@ -107,12 +130,12 @@ class OllamaModel(_RetryingModel):
 
 
 class LlamaServerModel(_RetryingModel):
-    """Any local server with llama.cpp's /v1/chat/completions endpoint, running an open-weight model."""
+    """Any server on this machine with llama.cpp's /v1/chat/completions endpoint, running an open-weight model."""
 
     def __init__(self, name: str | None = None, base_url: str | None = None, client: httpx.Client | None = None):
         self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
         base_url = base_url or os.environ.get("BIGBROTHER_BASE_URL", f"{ollama_host()}/v1")
-        self.client = client or httpx.Client(base_url=base_url, timeout=300)
+        self.client = _local_client(base_url, client)
 
     def _send(self, messages, schema):
         request = {

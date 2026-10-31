@@ -11,6 +11,7 @@ from bigbrother.extract.model import (
     LlamaServerModel,
     ReplayModel,
     default_model,
+    local_only,
     ollama_host,
 )
 from bigbrother.schema import Extraction, GeneratedScript
@@ -43,7 +44,7 @@ def fake_ollama(*replies, status=200):
         }
         return httpx.Response(status, json=body)
 
-    client = httpx.Client(base_url="http://ollama.test", transport=httpx.MockTransport(handler))
+    client = httpx.Client(base_url="http://localhost:11434", transport=httpx.MockTransport(handler))
     return OllamaModel(name="qwen3:4b", client=client), sent
 
 
@@ -100,8 +101,9 @@ def test_ollama_host_adds_a_scheme(monkeypatch):
 
 def test_default_is_the_small_model(monkeypatch):
     monkeypatch.delenv("BIGBROTHER_MODEL", raising=False)
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
     assert DEFAULT_MODEL == "qwen3:4b"
-    assert OllamaModel(client=httpx.Client()).name == "qwen3:4b"
+    assert OllamaModel().name == "qwen3:4b"
 
 
 def test_llama_cpp_style_servers_work_too():
@@ -116,7 +118,7 @@ def test_llama_cpp_style_servers_work_too():
         }
         return httpx.Response(200, json=body)
 
-    client = httpx.Client(base_url="http://llama.test/v1", transport=httpx.MockTransport(handler))
+    client = httpx.Client(base_url="http://127.0.0.1:8080/v1", transport=httpx.MockTransport(handler))
     parsed, call = LlamaServerModel(name="qwen3:4b", client=client).chat_json("extract", MESSAGES, Extraction)
 
     path, request = sent[0]
@@ -128,6 +130,8 @@ def test_llama_cpp_style_servers_work_too():
 
 
 def test_default_model_follows_the_environment(monkeypatch):
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    monkeypatch.delenv("BIGBROTHER_BASE_URL", raising=False)
     monkeypatch.setenv("BIGBROTHER_API", "llamacpp")
     assert isinstance(default_model(), LlamaServerModel)
     monkeypatch.setenv("BIGBROTHER_API", "ollama")
@@ -135,3 +139,47 @@ def test_default_model_follows_the_environment(monkeypatch):
     monkeypatch.setenv("BIGBROTHER_API", "cloud")
     with pytest.raises(ModelError):
         default_model()
+
+
+@pytest.mark.parametrize("url", ["http://localhost:11434", "http://127.0.0.1:11434", "http://[::1]:11434", "http://0.0.0.0:11434"])
+def test_models_on_this_machine_are_allowed(url):
+    assert local_only(url) == url
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://api.example.com/v1",
+        "http://192.168.1.20:11434",
+        "http://10.0.0.5:11434",
+        "http://localhost.example.com:11434",
+        "http://ollama.test",
+        "",
+    ],
+)
+def test_models_anywhere_else_are_refused(url):
+    with pytest.raises(ModelError, match="must run on this machine"):
+        local_only(url)
+
+
+def test_settings_cannot_send_the_model_off_the_machine(monkeypatch):
+    monkeypatch.setenv("OLLAMA_HOST", "192.168.1.20:11434")
+    with pytest.raises(ModelError):
+        OllamaModel()
+    monkeypatch.delenv("OLLAMA_HOST")
+    monkeypatch.setenv("BIGBROTHER_BASE_URL", "https://api.example.com/v1")
+    with pytest.raises(ModelError):
+        LlamaServerModel()
+
+
+def test_a_passed_in_client_is_checked_too():
+    with pytest.raises(ModelError):
+        OllamaModel(client=httpx.Client(base_url="https://api.example.com"))
+
+
+def test_proxies_and_redirects_are_ignored(monkeypatch):
+    monkeypatch.delenv("OLLAMA_HOST", raising=False)
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example.com:3128")
+    client = OllamaModel().client
+    assert client.trust_env is False
+    assert client.follow_redirects is False

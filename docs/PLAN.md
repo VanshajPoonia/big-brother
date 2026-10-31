@@ -60,7 +60,7 @@ Sync for 5 minutes at 9:45, 11:00, 12:30, 2:00, 3:30, 4:30 and 5:30: done, next,
 
 | Risk | Plan |
 | --- | --- |
-| A laptop can't run `qwen3:4b` | Point `OLLAMA_HOST` at the demo Mac, or `BIGBROTHER_API=llamacpp` at any other local server |
+| A laptop can't run `qwen3:4b` | Tests don't need it. Use `--replay` there and do real model runs on the demo Mac. The model can't be reached over the network, by design |
 | Judges' setup unknown | Layers in ARCHITECTURE.md: reports readable with no install, `--replay` with no model, full run with a model |
 | Docker slow on macOS | One small base image, built once |
 | Merge conflicts | Folder ownership, contracts first, small PRs |

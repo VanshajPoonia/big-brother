@@ -22,7 +22,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 
 | Part | Choice | Why not the alternative |
 | --- | --- | --- |
-| Model runtime | Ollama by default. `BIGBROTHER_API=llamacpp` talks to any local server with llama.cpp's `/v1/chat/completions` API (llama.cpp, vLLM, LM Studio, Ollama) | Locking to one server breaks on machines that run another |
+| Model runtime | Ollama by default. `BIGBROTHER_API=llamacpp` talks to any server on this machine with llama.cpp's `/v1/chat/completions` API (llama.cpp, vLLM, LM Studio, Ollama). Any other host is refused | Locking to one server breaks on machines that run another |
 | Model | `qwen3:4b` (about 2.5 GB, runs on CPU), thinking off, temperature 0, fixed seed | It only fills small schema-checked JSON and writes one short script, and rules pick the label. 8B needs about twice the memory |
 | Model calls | At most 3 per issue: extract, write a script, and one fix if the script breaks on its own | An agent loop lets the model pick actions. We don't want that, and we don't need it |
 | Schemas | Pydantic v2 | One model gives the JSON schema Ollama enforces and validates the answer. Up to 2 retries |
@@ -80,7 +80,18 @@ Each layer works without the one above it. `bigbrother doctor` says which layer 
 - Never crash. Every stage turns its own failures into `unknown` or `error`, and a report is always written. The CLI only exits non-zero for bad input.
 - Every network call and container has a timeout.
 - No model reachable: a pattern-based extractor picks up backticked names, versions and `SomethingError: ...` lines. The report says the model wasn't used and confidence stays low.
-- `OLLAMA_HOST`, `BIGBROTHER_API`, `BIGBROTHER_BASE_URL` and `BIGBROTHER_MODEL` point it at any server. Whatever runs, its name and digest go into the report.
+- `OLLAMA_HOST`, `BIGBROTHER_API`, `BIGBROTHER_BASE_URL` and `BIGBROTHER_MODEL` pick the server and model, but the server must be on this machine. Whatever runs, its name and digest go into the report.
+
+## What goes online
+
+| Step | Network |
+| --- | --- |
+| Model calls | Never. `local_only` in `extract/model.py` refuses any host that isn't localhost before a request is sent. Proxy settings are ignored and redirects aren't followed |
+| Reading the issue | GitHub REST API, title and body only |
+| Repo | `git clone` from GitHub, then cached |
+| Install container | PyPI, to install the package at the checked revision |
+| Repro run | Never. `--network none` |
+| Tests and CI | Never. Fake model and `httpx.MockTransport` |
 
 ## Metrics
 

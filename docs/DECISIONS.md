@@ -33,7 +33,7 @@ The organizers grade on `confirmed`, `cannot reproduce` and `invalid`, so we nev
 Maintainers use it when they can't make a bug happen. `invalid` would dismiss real bugs. The report marks it as a fallback.
 
 **31 Oct, 8:50 PM. Judges may not have Ollama.**
-`--replay` reruns from saved Qwen responses, and `OLLAMA_HOST` can point anywhere. The model stays `qwen3:8b`.
+`--replay` reruns from saved Qwen responses, and `OLLAMA_HOST` can point anywhere (replaced at 10:30 PM: local only). The model stays `qwen3:8b`.
 
 **31 Oct, 8:50 PM. Stricter evidence.**
 The symptom must be quoted from the report, a failure only counts inside the package, and premise checks can say `unknown`.
@@ -52,3 +52,6 @@ The model only fills schema-checked JSON and writes one short script, and rules 
 
 **31 Oct, 9:25 PM. Built so grading rules and machines can't break it.**
 Reports store raw facts and derive the label, `--blocked-label` changes the blocked policy without code, eval prints accuracy with and without blocked cases, and the tool works in layers from "no install" to "full model". It never crashes, it always writes a report.
+
+**31 Oct, 10:30 PM. The model only runs on this machine.**
+The organizers allow only offline models. The code refuses any model host that isn't localhost, ignores proxy settings and doesn't follow redirects, so a typo or a stray setting can't send issue text out. GitHub, git and pip still use the network. The repro run doesn't.
