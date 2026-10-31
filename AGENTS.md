@@ -21,6 +21,7 @@ A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, 
 - No secrets in the repo. Put them in `.env`, which is gitignored.
 - Never post issues or comments on real open-source projects. Only on our demo repo.
 - Tests must pass without Ollama. Use the fake model in tests.
+- Before every push, `python scripts/preflight.py` must pass. It runs CI's exact test command on the committed code in a fresh install, and checks the commit lines and secrets. Turn on the hooks once with `git config core.hooksPath .githooks` and it runs by itself on `git push`. Never skip it with `--no-verify`.
 - Everything is frozen at 6:30 AM. Nothing gets pushed after that.
 
 ## Lanes

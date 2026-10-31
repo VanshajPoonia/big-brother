@@ -1,0 +1,6 @@
+# Sourced by the hooks: find the project's Python on Mac, Linux or Windows (Git Bash).
+if [ -x .venv/bin/python ]; then PY=.venv/bin/python
+elif [ -x .venv/Scripts/python.exe ]; then PY=.venv/Scripts/python.exe
+elif command -v python3 >/dev/null 2>&1; then PY=python3
+else PY=python
+fi

@@ -84,6 +84,12 @@ pytest -q
 ```
 On Windows, the activate line is `.venv\Scripts\activate`. The last line must end with `passed`. Every time you open a new terminal, `cd big-brother` and run the activate line again.
 
+Then turn on the guard that runs before every push:
+```
+git config core.hooksPath .githooks
+```
+From now on `git commit` refuses a message without the two lines, and `git push` first runs exactly what CI runs on the committed code. If the push is refused, read the last lines it printed, fix that, and push again.
+
 **6. Abhijeet only: Docker.**
 - Install Docker Desktop: `brew install --cask docker-desktop` on a Mac, or the installer from https://www.docker.com/products/docker-desktop/.
 - Open Docker Desktop and wait until it says the engine is running.

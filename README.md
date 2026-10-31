@@ -76,7 +76,7 @@ Each mistake is in the table with the reason the tool gave.
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md) first. Every change goes through a pull request.
+Read [AGENTS.md](AGENTS.md) first. Every change goes through a pull request. Run `git config core.hooksPath .githooks` once: then every push first runs `scripts/preflight.py`, which is CI's exact test command on the committed code in a fresh install.
 
 ## License
 
