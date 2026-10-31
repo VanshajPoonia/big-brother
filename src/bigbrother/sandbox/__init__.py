@@ -10,11 +10,13 @@ imported from.
 
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import tarfile
 import tempfile
@@ -305,6 +307,21 @@ def export_revision(repo_dir: Path, sha: str, dest: Path, commands: list[str]) -
             os.chmod(Path(root) / file, 0o644)
 
 
+@contextlib.contextmanager
+def _workdir():
+    """A temp folder that's removed afterwards, as far as it can be.
+
+    A killed install can leave files owned by the container's user that the host user can't
+    delete. TemporaryDirectory's ignore_cleanup_errors still raised on CI then (Python 3.12 tries
+    to chmod them first and that fails too), so removal here really ignores errors.
+    """
+    path = tempfile.mkdtemp(prefix="bigbrother-")
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def reproduce(
     repo_dir: Path,
     revision: Revision,
@@ -319,8 +336,7 @@ def reproduce(
     marker = f"bigbrother-{uuid.uuid4().hex}"
     names = {"install": f"bb-{run_id}-install", "run": f"bb-{run_id}-run", "volume": f"bb-{run_id}-deps"}
 
-    # A killed install can leave files the host user can't delete. Don't fail the result over that.
-    with tempfile.TemporaryDirectory(prefix="bigbrother-", ignore_cleanup_errors=True) as tmp:
+    with _workdir() as tmp:
         try:
             result = _reproduce(Path(tmp), Path(repo_dir), revision, script, symptom, package, names, marker, commands)
         except Exception as error:
@@ -451,7 +467,7 @@ def run_tests(repo_dir: Path, sha: str, files: list[str], overlay: dict[str, str
     run_id = uuid.uuid4().hex[:12]
     marker = f"bigbrother-{uuid.uuid4().hex}"
     names = {"install": f"bb-{run_id}-install", "run": f"bb-{run_id}-tests", "volume": f"bb-{run_id}-deps"}
-    with tempfile.TemporaryDirectory(prefix="bigbrother-", ignore_cleanup_errors=True) as tmp:
+    with _workdir() as tmp:
         try:
             result = _run_tests(Path(tmp), Path(repo_dir), sha, files, overlay or {}, version, names, marker, commands)
         except Exception as error:

@@ -371,3 +371,19 @@ def test_tests_install_the_test_extra_and_pytest(tmp_path):
     script = sandbox.install_script("m", "/src[tests]", ("pytest",))
     assert "-e '/src[tests]' pytest;" in script
     assert sandbox.test_extra(tmp_path / "missing") is None
+
+
+def test_the_work_folder_goes_even_when_part_of_it_cant_be_deleted(monkeypatch):
+    import shutil
+
+    seen = {}
+    real = shutil.rmtree
+
+    def rmtree(path, ignore_errors=False, **kwargs):
+        seen["ignore_errors"] = ignore_errors
+        return real(path, ignore_errors=ignore_errors, **kwargs)
+
+    monkeypatch.setattr(shutil, "rmtree", rmtree)
+    with sandbox._workdir() as tmp:
+        assert Path(tmp).is_dir()
+    assert seen == {"ignore_errors": True} and not Path(tmp).exists()
