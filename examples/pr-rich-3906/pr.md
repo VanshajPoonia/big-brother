@@ -4,7 +4,7 @@ https://github.com/Textualize/rich/pull/3906
 
 **no test for this change**: no test the PR adds or changes uses a function it changes
 
-No model and no run: this comes from the PR's diff and the tests at its head.
+No model: this comes from the PR's diff and the tests at its head.
 
 ## Why
 - `render_scope` (rich/scope.py:14) changed, and no test uses it at all

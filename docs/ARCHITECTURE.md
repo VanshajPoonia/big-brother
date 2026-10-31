@@ -19,9 +19,11 @@ issue (title + body only, never comments or labels)
   6 output      report.json (with every model answer) and report.md
 ```
 
-Pull requests, `bigbrother pr`: no model and no run. The diff gives the changed lines, `ast` at the PR's head gives the functions holding them, and `git grep` finds test lines that use each one. Only tests the PR adds or changes count, including a new parametrize case on a test. Older tests are listed but were written before the change. The label is `tested`, `partly tested`, `no test for this change` or `no function changed`. Imports don't count as use, a method's test file must name its class, a constructor is found by its class name, and when two modules define the same name the test file must name the module.
+Pull requests, `bigbrother pr`: no model. The diff gives the changed lines, `ast` at the PR's head gives the functions holding them, and `git grep` finds test lines that use each one. Only tests the PR adds or changes count, including a new parametrize case on a test. Older tests are listed but were written before the change. With `--run-tests` the PR's test files also run in the sandbox: at the head, then at the base with the PR's test files copied in. Failing before and passing after makes it `tested` whatever the names say. Failing at the head makes it `tests fail`. The label is `tested`, `partly tested`, `no test for this change`, `no function changed` or `tests fail`. `--base REF` checks a local branch instead, with nothing online. Imports don't count as use, a method's test file must name its class, a constructor is found by its class name, and when two modules define the same name the test file must name the module.
 
-The bot, `bigbrother watch`: polls our demo repo and comments each new issue and PR with its report and label, like a GitHub App would on a webhook. The model stays on this machine. Comments only go to the repos in `DEMO_REPOS` in `bot.py`, fixed in the code, and that check runs before anything else. Labels are read only to skip what's done, never passed to the verdict.
+The bot: `bigbrother init` writes a GitHub Actions workflow into a repo. It runs on a self-hosted runner labelled `bigbrother`, the maintainer's own machine, which asks GitHub for work, so there's no server and the model never leaves that machine. It triggers on `issues` and `pull_request_target`, so the workflow always comes from the default branch and a PR can't change what runs. Only owners, members and collaborators get their PR's tests run. A repo can get comments in two cases only: it's in `DEMO_REPOS` in `bot.py`, or its own Actions job is running the tool (`GITHUB_ACTIONS` with the same `GITHUB_REPOSITORY`), whose token can't write anywhere else. `bigbrother watch` does the same by polling from a terminal, for the demo repo. Labels are read only to skip what's done, never passed to the verdict.
+
+Reports may become public comments, so the home folder is written `~` and a per-user temp folder `$TMPDIR` in the commands they record. Paths inside the container and the reporter's own, quoted from the issue, stay.
 
 ## Components
 
@@ -38,7 +40,7 @@ The bot, `bigbrother watch`: polls our demo repo and comments each new issue and
 | Sandbox | Docker, called with exact flags through `subprocess` | The exact command goes into the evidence. gVisor and Firecracker don't run on macOS |
 | Installs | `uv pip install` | Much faster than pip across 15 eval repos |
 | Verdict | Fixed Python rules | Explainable and unit-tested. A model or classifier would guess |
-| Interface | CLI: `check`, `pr`, `eval`, `doctor`, and `watch` as the bot | A hosted GitHub App needs a public server, and the model must stay on this machine. `watch` does the same job from a laptop |
+| Interface | A GitHub Actions workflow on a self-hosted runner, from `bigbrother init`. CLI: `check`, `pr`, `eval`, `doctor`, `watch` | A hosted GitHub App needs a public server and would run the model somewhere else. A self-hosted runner pulls its work, so nothing needs to reach the maintainer's machine |
 | Tests | pytest, a fake model replaying saved Qwen responses, a real Docker test in CI | Pulling a model in CI is slow and proves nothing the saved runs don't |
 
 ## Evidence rules
@@ -98,7 +100,8 @@ Each layer works without the one above it. `bigbrother doctor` says which layer 
 | Model calls | Never. `local_only` in `extract/model.py` refuses any host that isn't localhost before a request is sent. Proxy settings are ignored and redirects aren't followed |
 | Reading the issue | GitHub REST API, title and body only |
 | Pull requests | GitHub REST API for the base and head commits, then `git fetch` of the PR's head |
-| Bot comments | GitHub REST API, only to the repos in `DEMO_REPOS` |
+| Bot comments | GitHub REST API, only to the demo repo or the repo whose own job is running |
+| A PR's tests | The install container fetches the package's dependencies and pytest. The tests run with `--network none` |
 | Repo | `git clone` from GitHub, then cached |
 | Install container | PyPI, to install the package at the checked revision |
 | Repro run | Never. `--network none` |
@@ -110,4 +113,4 @@ Each layer works without the one above it. `bigbrother doctor` says which layer 
 
 ## Not now
 
-SARIF, agent loop, full history scans, OpenVEX, signed evidence, tracing, gVisor, bisect, Hypothesis, running a PR's tests on its base and head. Roadmap: a hosted GitHub App with a local model per install, Firecracker, other languages via tree-sitter.
+SARIF, agent loop, full history scans, OpenVEX, signed evidence, tracing, gVisor, bisect, Hypothesis. Roadmap: Firecracker, other languages via tree-sitter.

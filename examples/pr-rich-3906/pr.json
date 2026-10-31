@@ -99,5 +99,8 @@
   "outside_functions": [
     "rich/scope.py: 1 changed line outside any function",
     "rich/traceback.py: 3 changed lines outside any function"
-  ]
+  ],
+  "tests_run": [],
+  "head_run": null,
+  "base_run": null
 }

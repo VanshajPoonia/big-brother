@@ -83,3 +83,12 @@ The first version counted any test naming a changed function, so rich #3915 look
 
 **1 Nov, 3:45 AM. A bot from the laptop, commenting only on our demo repo.**
 The problem asks for a GitHub App. A hosted App needs a public server, and the model has to stay on this machine, so `bigbrother watch` polls a repo and comments like an App would on a webhook. The repos it may comment on are fixed in `bot.py`, not read from a flag, and checked before anything runs, so it can't comment on a real project.
+
+**1 Nov, 4:10 AM. Reports write this machine's folders as ~ and $TMPDIR.**
+Reports became public comments, and the recorded commands named the home folder and macOS's per-user temp folder. Placeholders like `<clone>` read like leftover data, so the folders are written the way a shell would, and the commands still read and paste the same. The two tinylib examples ran from a scratch folder, so they were replaced by real runs on the demo repo's issues.
+
+**1 Nov, 4:20 AM. The PR check runs the PR's tests.**
+Reading which tests use a function can't show the test checks the change. With `--run-tests` the PR's test files run in the sandbox at its head, then at its base with those files copied in. On humanize #392, #359 and #381 they fail without the fix and pass with it. Running beats reading names, so failing before and passing after makes it `tested`.
+
+**1 Nov, 4:25 AM. The bot is a workflow on the maintainer's own machine.**
+A hosted GitHub App needs a public server and would run the model somewhere else. A self-hosted Actions runner pulls work from GitHub, so it needs no server and nothing reaches the machine from outside, and the comments come from `github-actions`. `bigbrother init` installs it in one command. It uses `pull_request_target` so a PR can't change the workflow, and only people with write access get their PR's tests run.

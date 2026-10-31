@@ -26,6 +26,7 @@ LABEL_COLORS = {
     "partly tested": "fbca04",
     "no test for this change": "d93f0b",
     "no function changed": "c5def5",
+    "tests fail": "b60205",
 }
 
 

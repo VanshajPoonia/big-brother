@@ -2,9 +2,10 @@
 
     python scripts/demo_repo.py
 
-It pushes tinylib (the tests' tiny package, two tagged releases) to VanshajPoonia/big-brother-demo,
-opens five test reports and two pull requests, and creates the labels. Then
-`bigbrother watch --once` checks each one and comments. Needs `gh auth login`. Run it once.
+It pushes tinylib (the tests' tiny package, two tagged releases) to VanshajPoonia/big-brother-demo
+with the bot's workflow from `bigbrother init`, opens five test reports and two pull requests, and
+creates the labels. A self-hosted runner labelled bigbrother then comments on each one, or
+`bigbrother watch --once` does it from this machine. Needs `gh auth login`. Run it once.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from bigbrother.bot import DEMO_REPOS, LABEL_COLORS  # noqa: E402
+from bigbrother.cli import main as cli  # noqa: E402
 
 DEMO = "VanshajPoonia/big-brother-demo"
 assert DEMO.lower() in DEMO_REPOS
@@ -90,6 +92,9 @@ def main() -> int:
         (repo / "tests" / "test_urls.py").write_text(TESTS)
         git(repo, "add", "-A")
         git(repo, "commit", "-q", "-m", "Add a README and a test")
+        cli(["init", str(repo)])
+        git(repo, "add", "-A")
+        git(repo, "commit", "-q", "-m", "Add the Big Brother bot")
 
         urls = (repo / "tinylib" / "urls.py").read_text()
         stripped = urls.replace("def parse_url(url):\n", "def parse_url(url):\n    url = url.strip()\n")
@@ -101,7 +106,8 @@ def main() -> int:
         (repo / "tinylib" / "urls.py").write_text(stripped)
         (repo / "tests" / "test_urls.py").write_text(
             TESTS.replace("import parse_query", "import parse_query, parse_url")
-            + '\n\ndef test_parse_url_strips_spaces():\n    assert parse_url(" https://a.com/b ")["host"] == "a.com"\n')
+            # The old code keeps the leading space in the scheme, so this fails without the change.
+            + '\n\ndef test_parse_url_strips_spaces():\n    assert parse_url(" https://a.com/b ")["scheme"] == "https"\n')
         git(repo, "commit", "-q", "-am", "Strip spaces around URLs, with a test")
         git(repo, "checkout", "-q", "main")
 

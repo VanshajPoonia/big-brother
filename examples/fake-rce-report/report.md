@@ -1,6 +1,6 @@
 # Remote code execution in parse_url_v2()
 
-https://github.com/daggers/tinylib/issues/2
+https://github.com/VanshajPoonia/big-brother-demo/issues/2
 
 **invalid** (high confidence, rule 2, basis evidence)
 
@@ -15,6 +15,6 @@ https://github.com/daggers/tinylib/issues/2
 ## Notes
 - skipped the run, a central premise doesn't exist
 
-Rerun: `bigbrother check https://github.com/daggers/tinylib/issues/2`
+Rerun: `bigbrother check https://github.com/VanshajPoonia/big-brother-demo/issues/2`
 
 bigbrother 0.1.0, model qwen3:4b
