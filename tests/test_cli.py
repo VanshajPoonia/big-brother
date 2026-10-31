@@ -105,3 +105,30 @@ def test_doctor_says_when_ollama_isnt_answering(monkeypatch, capsys):
     monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:1")
     main(["doctor"])
     assert "Ollama isn't answering" in capsys.readouterr().out
+
+
+def test_eval_only_reruns_some_but_scores_all(tmp_path, monkeypatch, capsys):
+    from bigbrother import cli, ingest, pipeline
+
+    cases = tmp_path / "cases.yaml"
+    cases.write_text(
+        "- {id: a-1, issue_url: 'https://github.com/o/a/issues/1', repo: o/a, expected: confirmed, checked_by: t}\n"
+        "- {id: a-2, issue_url: 'https://github.com/o/a/issues/2', repo: o/a, expected: invalid, checked_by: t}\n"
+    )
+    out = tmp_path / "runs"
+    issue = load_issue_file(FIXTURES / "issues" / "real_bug.json")
+    saved = Report(tool_version="0", model_available=True, issue=issue,
+                   verdict=Verdict(label=Label.INVALID, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=2))
+    (out / "a-2").mkdir(parents=True)
+    (out / "a-2" / "report.json").write_text(saved.model_dump_json())
+
+    rerun = saved.model_copy(update={"verdict": saved.verdict.model_copy(update={"label": Label.CONFIRMED, "rule": 1})})
+    monkeypatch.setattr(model_module, "default_model", lambda: ReplayModel([]))
+    monkeypatch.setattr(ingest, "fetch_issue", lambda url: issue)
+    monkeypatch.setattr(ingest, "ensure_clone", lambda repo, cache: tmp_path)
+    monkeypatch.setattr(pipeline, "check", lambda *args, **kwargs: rerun)
+
+    assert main(["eval", str(cases), "--out", str(out), "--only", "a-1"]) == 0
+    results = (out / "results.md").read_text()
+    assert "**2/2 (100%)**" in results  # a-1 rerun, a-2 from its saved report
+    assert "Seconds per issue" not in results

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ast
 import sys
+from collections.abc import Callable
 
 from bigbrother.extract.model import Model
 from bigbrother.schema import GeneratedScript, ModelCall, ReproScript, RunResult, Symptom
@@ -89,12 +90,59 @@ def only_added_imports(original: str, fixed: str, package: str | None) -> bool:
     return True
 
 
+def _imported(tree: ast.Module) -> set[tuple[str, str]]:
+    return {(node.module or "", alias.name) for node in tree.body if isinstance(node, ast.ImportFrom) for alias in node.names}
+
+
+def drop_missing_imports(original: str, fixed: str, missing: Callable[[str, str], bool]) -> tuple[str, list[str]]:
+    """Take out names the repair imported that the package doesn't have, like a function the
+    reporter only proposed. Lines using such a name go too, unless the script defines it itself.
+    The reporter's own imports are never touched: a missing name there is their claim."""
+    try:
+        before, after = ast.parse(original), ast.parse(fixed)
+    except SyntaxError:
+        return fixed, []
+    added = _imported(after) - _imported(before)
+    gone = {(module, name) for module, name in added if module and missing(module, name)}
+    if not gone:
+        return fixed, []
+    names = {name for _, name in gone}
+    defined = {node.name for node in after.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
+    defined |= {t.id for node in after.body if isinstance(node, ast.Assign) for t in node.targets if isinstance(t, ast.Name)}
+
+    lines = fixed.splitlines()
+    replace: dict[int, str | None] = {}  # first line index of a statement -> new text, None to drop it
+    for node in after.body:
+        if isinstance(node, ast.ImportFrom) and any((node.module or "", a.name) in gone for a in node.names):
+            kept = [a for a in node.names if (node.module or "", a.name) not in gone]
+            replace[node.lineno - 1] = ast.unparse(ast.ImportFrom(module=node.module, names=kept, level=node.level)) if kept else None
+        elif any(isinstance(n, ast.Name) and n.id in names - defined for n in ast.walk(node)):
+            replace[node.lineno - 1] = None
+    spans = {node.lineno - 1: node.end_lineno for node in after.body}
+    out, skip_until = [], -1
+    for i, line in enumerate(lines):
+        if i < skip_until:
+            continue
+        if i in replace:
+            skip_until = spans[i]
+            if replace[i] is not None:
+                out.append(replace[i])
+            continue
+        out.append(line)
+    return "\n".join(out) + "\n", sorted(f"{module}.{name}" for module, name in gone)
+
+
 def _tail(text: str, lines: int = 15) -> str:
     return "\n".join(text.strip().splitlines()[-lines:])
 
 
 def repair(
-    script: ReproScript, run: RunResult, package: str | None, symptom: Symptom | None, model: Model
+    script: ReproScript,
+    run: RunResult,
+    package: str | None,
+    symptom: Symptom | None,
+    model: Model,
+    missing: Callable[[str, str], bool] | None = None,
 ) -> tuple[ReproScript | None, ModelCall, list[str]]:
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -111,6 +159,12 @@ def repair(
     if problem:
         return None, call, [f"rejected Qwen's repaired script, {problem}"]
     code = generated.code.rstrip() + "\n"
+    notes = []
+    if missing is not None:
+        code, dropped = drop_missing_imports(script.code, code, missing)
+        if dropped:
+            notes.append(f"took out {', '.join(dropped)} from Qwen's imports, the package doesn't have them at this revision")
     if script.origin == "reporter" and only_added_imports(script.code, code, package):
-        return ReproScript(code=code, origin="reporter"), call, ["Qwen only added imports or dropped lines, so the code that ran is still the reporter's"]
-    return ReproScript(code=code, origin="model"), call, []
+        notes.append("Qwen only added imports or dropped lines, so the code that ran is still the reporter's")
+        return ReproScript(code=code, origin="reporter"), call, notes
+    return ReproScript(code=code, origin="model"), call, notes

@@ -259,25 +259,25 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:49:03.120646Z",
+        "created_at": "2026-10-31T21:08:41.55187Z",
         "message": {
           "role": "assistant",
           "content": "{\n  \"central_claim\": \"The console has no attribute save_svg\",\n  \"has_steps\": true,\n  \"package\": \"rich\",\n  \"claimed_version\": \"0.18.1\",\n  \"premises\": [\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"rich.console.Console\",\n      \"central\": true\n    },\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"rich.console.Console.save_svg\",\n      \"central\": true\n    }\n  ],\n  \"symptom\": {\n    \"kind\": \"exception\",\n    \"quote\": \"AttributeError: 'Console' object has no attribute 'save_svg'\",\n    \"exception_type\": \"AttributeError\"\n  }\n}"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 15952794000,
-        "load_duration": 5605208,
+        "total_duration": 18768739250,
+        "load_duration": 2584250,
         "prompt_eval_count": 771,
         "prompt_eval_cached_count": 404,
-        "prompt_eval_duration": 3280465000,
+        "prompt_eval_duration": 3804592000,
         "eval_count": 150,
-        "eval_duration": 12542288000
+        "eval_duration": 14850470000
       },
       "attempts": 1,
       "prompt_tokens": 771,
       "output_tokens": 150,
-      "duration_s": 15.952794
+      "duration_s": 18.76873925
     }
   ],
   "notes": [

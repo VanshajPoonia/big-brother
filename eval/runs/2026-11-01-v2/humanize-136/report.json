@@ -67,18 +67,18 @@
       "docker image inspect bigbrother-sandbox:0.1",
       "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
       "git -C /Users/vanshajpoonia/.cache/bigbrother/repos/python-humanize__humanize archive --format=tar 2635e6e4c15a9182f2a7273500f7f02b14fde343",
-      "docker volume create bb-8de501505512-deps",
-      "docker run --name bb-8de501505512-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-o75uxn9q/src,target=/src --mount type=volume,source=bb-8de501505512-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-e57560b8cef84a5ca402df1a4a50c5f6; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
-      "docker run --name bb-8de501505512-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-o75uxn9q/src,target=/src,readonly --mount type=volume,source=bb-8de501505512-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-o75uxn9q/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '\"'\"'import contextlib, importlib, io, sys\ntry:\n    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):\n        module = importlib.import_module(sys.argv[1])\nexcept BaseException:\n    sys.exit(0)\npath = getattr(module, \"__file__\", None) or next(iter(getattr(module, \"__path__\", [])), \"\")\nprint(sys.argv[2])\nprint(path)\n'\"'\"' humanize bigbrother-e57560b8cef84a5ca402df1a4a50c5f6 2>/dev/null; exec /deps/venv/bin/python /repro.py'",
-      "docker rm -f bb-8de501505512-install bb-8de501505512-run",
-      "docker volume rm -f bb-8de501505512-deps"
+      "docker volume create bb-fd10cdb41eb6-deps",
+      "docker run --name bb-fd10cdb41eb6-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-wi6nbddm/src,target=/src --mount type=volume,source=bb-fd10cdb41eb6-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-420eaa3dfc5542259d863ad38becf306; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-fd10cdb41eb6-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-wi6nbddm/src,target=/src,readonly --mount type=volume,source=bb-fd10cdb41eb6-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-wi6nbddm/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '\"'\"'import contextlib, importlib, io, sys\ntry:\n    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):\n        module = importlib.import_module(sys.argv[1])\nexcept BaseException:\n    sys.exit(0)\npath = getattr(module, \"__file__\", None) or next(iter(getattr(module, \"__path__\", [])), \"\")\nprint(sys.argv[2])\nprint(path)\n'\"'\"' humanize bigbrother-420eaa3dfc5542259d863ad38becf306 2>/dev/null; exec /deps/venv/bin/python /repro.py'",
+      "docker rm -f bb-fd10cdb41eb6-install bb-fd10cdb41eb6-run",
+      "docker volume rm -f bb-fd10cdb41eb6-deps"
     ],
-    "image_digest": "sha256:1db2df24fc0a785b7de9c90830a2193446f89dc4cb9a030dace91bb7cb91ad8d",
+    "image_digest": "sha256:a7e232cca38ba46293b4c3b7246485654618c31080fead2e957c07157386e285",
     "python_version": "3.12.16",
     "packages": [
       "-e file:///src"
     ],
-    "duration_s": 4.62
+    "duration_s": 5.08
   },
   "verdict": {
     "label": "cannot reproduce",
@@ -258,25 +258,25 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:50:42.685917Z",
+        "created_at": "2026-10-31T21:11:03.839221Z",
         "message": {
           "role": "assistant",
           "content": "{\n  \"central_claim\": \"The `humanize.intword` function returns a string with a decimal value when it should not for the number 1000\",\n  \"has_steps\": true,\n  \"package\": \"humanize\",\n  \"claimed_version\": \"latest\",\n  \"premises\": [\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"humanize.intword\",\n      \"central\": true\n    }\n  ],\n  \"symptom\": {\n    \"kind\": \"wrong_output\",\n    \"quote\": \"1.0 thousand\",\n    \"exception_type\": null\n  }\n}"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 13013832333,
-        "load_duration": 2545250,
+        "total_duration": 16421357666,
+        "load_duration": 28530458,
         "prompt_eval_count": 612,
         "prompt_eval_cached_count": 401,
-        "prompt_eval_duration": 1891861000,
+        "prompt_eval_duration": 2123853999,
         "eval_count": 130,
-        "eval_duration": 11015641000
+        "eval_duration": 14123983000
       },
       "attempts": 1,
       "prompt_tokens": 612,
       "output_tokens": 130,
-      "duration_s": 13.013832333
+      "duration_s": 16.421357666
     },
     {
       "step": "repro",
@@ -321,25 +321,25 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:50:50.387346Z",
+        "created_at": "2026-10-31T21:11:13.633482Z",
         "message": {
           "role": "assistant",
           "content": "{\n  \"code\": \"from humanize import intword\\n\\nprint(intword(1000))\"\n  }"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 2650282000,
-        "load_duration": 1803333,
+        "total_duration": 5093877000,
+        "load_duration": 2249541,
         "prompt_eval_count": 256,
-        "prompt_eval_cached_count": 169,
-        "prompt_eval_duration": 653351000,
+        "prompt_eval_cached_count": 4,
+        "prompt_eval_duration": 2624784000,
         "eval_count": 26,
-        "eval_duration": 1947831000
+        "eval_duration": 2407726000
       },
       "attempts": 1,
       "prompt_tokens": 256,
       "output_tokens": 26,
-      "duration_s": 2.650282
+      "duration_s": 5.093877
     }
   ],
   "notes": [

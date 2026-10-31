@@ -244,25 +244,25 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:47:20.408997Z",
+        "created_at": "2026-10-31T21:06:42.698313Z",
         "message": {
           "role": "assistant",
           "content": "{\n    \"central_claim\": \"The 'arrow' module does not have a 'get' method when imported as 'arrow.get'\",\n    \"has_steps\": true,\n    \"package\": \"arrow\",\n    \"claimed_version\": \"0.17.0\",\n    \"premises\": [\n        {\n            \"kind\": \"symbol\",\n            \"value\": \"arrow.get\",\n            \"central\": true\n        }\n    ],\n    \"symptom\": {\n        \"kind\": \"exception\",\n        \"quote\": \"AttributeError: module 'arrow.arrow' has no attribute 'get'\",\n        \"exception_type\": \"AttributeError\"\n    }\n  }"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 19970932875,
-        "load_duration": 5339625,
+        "total_duration": 15401980083,
+        "load_duration": 1220500,
         "prompt_eval_count": 534,
         "prompt_eval_cached_count": 401,
-        "prompt_eval_duration": 2236703000,
+        "prompt_eval_duration": 1532596000,
         "eval_count": 134,
-        "eval_duration": 17711256000
+        "eval_duration": 13852542000
       },
       "attempts": 1,
       "prompt_tokens": 534,
       "output_tokens": 134,
-      "duration_s": 19.970932875
+      "duration_s": 15.401980083
     }
   ],
   "notes": [

@@ -87,3 +87,42 @@ def test_a_repair_that_changes_the_code_is_the_models():
     fixed, _, notes = repair(BROKEN, NAME_ERROR, "tinylib", SYMPTOM, qwen_writes('from tinylib import parse_url\nparse_url("y")'))
     assert fixed.origin == "model"
     assert notes == []
+
+
+def test_a_proposed_function_qwen_imported_is_taken_out():
+    # toolz #99: the reporter defines clojure_update_in later in the issue, Qwen imported it from toolz.
+    from bigbrother.extract.repair import drop_missing_imports
+    original = "update_in({}, [4, 5], f)\nclojure_update_in({}, [4], f)\n\ndef clojure_update_in(d, keys, f):\n    return clojure_update_in(d, keys, f)\n"
+    fixed = "from toolz import update_in, clojure_update_in\n" + original
+    code, dropped = drop_missing_imports(original, fixed, lambda module, name: name == "clojure_update_in")
+
+    assert dropped == ["toolz.clojure_update_in"]
+    assert code.startswith("from toolz import update_in\nupdate_in({}, [4, 5], f)\n")
+    assert "clojure_update_in({}, [4], f)" in code  # defined in the script, so its calls stay
+
+
+def test_lines_using_a_name_nobody_defines_are_dropped():
+    from bigbrother.extract.repair import drop_missing_imports
+    original = "f()\ng(\n    1,\n)\nh()\n"
+    fixed = "from pkg import f, g\nfrom pkg import h\n" + original
+    code, dropped = drop_missing_imports(original, fixed, lambda module, name: name in {"g", "h"})
+
+    assert dropped == ["pkg.g", "pkg.h"]
+    assert code == "from pkg import f\nf()\n"
+
+
+def test_the_reporters_own_imports_are_never_touched():
+    from bigbrother.extract.repair import drop_missing_imports
+    original = "from pkg import gone\ngone()\n"
+    code, dropped = drop_missing_imports(original, "import os\n" + original, lambda module, name: True)
+    assert dropped == []
+    assert "from pkg import gone" in code
+
+
+def test_repair_drops_missing_names_and_stays_the_reporters():
+    broken = ReproScript(code="update_in({}, [4, 5], f)\n", origin="reporter")
+    model = qwen_writes("from toolz import update_in, clojure_update_in\nupdate_in({}, [4, 5], f)")
+    fixed, _, notes = repair(broken, NAME_ERROR, "toolz", SYMPTOM, model, missing=lambda m, n: n == "clojure_update_in")
+    assert fixed.code == "from toolz import update_in\nupdate_in({}, [4, 5], f)\n"
+    assert fixed.origin == "reporter"
+    assert "took out toolz.clojure_update_in" in notes[0]

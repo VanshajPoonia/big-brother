@@ -64,3 +64,7 @@ All 4 real invalid reports in the eval were misunderstandings or feature request
 
 **1 Nov, 2:20 AM. The package name comes from the repo.**
 On toolz #99 Qwen named the package `update_in`, a function. That broke the repair and would have hidden a real crash, because "inside the package" is checked against that name. Now the importable packages are read from the checkout, and Qwen's name is only kept if the repo has it.
+
+**1 Nov, 2:40 AM. A repair can't import what the package doesn't have.**
+On toolz #99 Qwen's repair imported `clojure_update_in`, a function the reporter only proposed, so the script died before reaching the real bug. Names a repair adds are now checked against the source at that revision and taken out if they're missing. Only the model's additions are touched. Eval went from 6 to 7 of 11.
+

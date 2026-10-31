@@ -17,9 +17,9 @@ https://github.com/arrow-py/arrow/issues/1154
 - `docker image inspect bigbrother-sandbox:0.1`
 - `docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1`
 - `git -C /Users/vanshajpoonia/.cache/bigbrother/repos/arrow-py__arrow archive --format=tar 8842f8c3263d1f1219c189a0500aa67abdd0a214`
-- `docker volume create bb-81184d0acc11-deps`
-- `docker run --name bb-81184d0acc11-install -e SETUPTOOLS_SCM_PRETEND_VERSION=1.2.3 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-t4gynlv0/src,target=/src --mount type=volume,source=bb-81184d0acc11-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-805e70eade6e43bda17ce7f53e1e927a; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'`
-- `docker run --name bb-81184d0acc11-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-t4gynlv0/src,target=/src,readonly --mount type=volume,source=bb-81184d0acc11-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-t4gynlv0/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '"'"'import contextlib, importlib, io, sys
+- `docker volume create bb-7616ce477dd5-deps`
+- `docker run --name bb-7616ce477dd5-install -e SETUPTOOLS_SCM_PRETEND_VERSION=1.2.3 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/src,target=/src --mount type=volume,source=bb-7616ce477dd5-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-1b528bfe377a4ddf840f51bda684a179; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'`
+- `docker run --name bb-7616ce477dd5-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/src,target=/src,readonly --mount type=volume,source=bb-7616ce477dd5-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-hrfdt83t/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '"'"'import contextlib, importlib, io, sys
 try:
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         module = importlib.import_module(sys.argv[1])
@@ -28,8 +28,8 @@ except BaseException:
 path = getattr(module, "__file__", None) or next(iter(getattr(module, "__path__", [])), "")
 print(sys.argv[2])
 print(path)
-'"'"' arrow bigbrother-805e70eade6e43bda17ce7f53e1e927a 2>/dev/null; exec /deps/venv/bin/python /repro.py'`
-- `docker rm -f bb-81184d0acc11-install bb-81184d0acc11-run`
-- `docker volume rm -f bb-81184d0acc11-deps`
+'"'"' arrow bigbrother-1b528bfe377a4ddf840f51bda684a179 2>/dev/null; exec /deps/venv/bin/python /repro.py'`
+- `docker rm -f bb-7616ce477dd5-install bb-7616ce477dd5-run`
+- `docker volume rm -f bb-7616ce477dd5-deps`
 
 bigbrother 0.1.0, model qwen3:4b

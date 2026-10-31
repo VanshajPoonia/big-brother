@@ -157,3 +157,15 @@ def test_a_wrong_package_from_qwen_is_replaced_and_noted(load_issue, tinylib_rep
     assert report.extraction.package == "tinylib"
     assert sandbox.calls[0][3] == "tinylib"
     assert "the package is 'tinylib' from the repo, not 'parse_url' as Qwen read it" in report.notes
+
+
+def test_a_repair_importing_something_tinylib_lacks_is_cleaned_before_the_rerun(load_issue, tinylib_repo):
+    own_error = RunResult(status=ExecutionStatus.RAN, exit_code=1, exception_type="NameError")
+    sandbox = SequenceSandbox(own_error, CRASHED)
+    model = qwen_and_repair("real_bug", 'from tinylib import parse_url, parse_url_v2\nparse_url("https://example.com/" + "a" * 300)')
+
+    report = check(load_issue("real_bug"), tinylib_repo.path, model, reproduce=sandbox, **LANES)
+
+    assert sandbox.scripts[1].code.startswith("from tinylib import parse_url\n")
+    assert sandbox.scripts[1].origin == "reporter"
+    assert any("took out tinylib.parse_url_v2" in n for n in report.notes)

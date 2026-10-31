@@ -69,45 +69,47 @@
     }
   ],
   "repro": {
-    "code": "from toolz import update_in, clojure_update_in\n\n# let's feed it an empty dictionary\nupdate_in({}, [4], lambda x:1 if x else -1)\nupdate_in({}, [4, 5], lambda x:1 if x else -1)\n\nclojure_update_in({}, [4], lambda x:1 if x else -1)\nclojure_update_in({}, [4, 5], lambda x:1 if x else -1)\nclojure_update_in({}, [4, 5, 9, 10, 11], lambda x:1 if x else -1)\nclojure_update_in({}, [4, 5, 9, 10, 11], identity)\n",
+    "code": "from toolz import update_in\n\n# let's feed it an empty dictionary\nupdate_in({}, [4], lambda x:1 if x else -1)\nupdate_in({}, [4, 5], lambda x:1 if x else -1)\n\n",
     "origin": "reporter"
   },
   "run": {
     "status": "ran",
     "exit_code": 1,
     "stdout": "",
-    "stderr": "Traceback (most recent call last):\n  File \"/repro.py\", line 1, in <module>\n    from toolz import update_in, clojure_update_in\nImportError: cannot import name 'clojure_update_in' from 'toolz' (/src/toolz/__init__.py)\n",
-    "exception_type": "ImportError",
+    "stderr": "Traceback (most recent call last):\n  File \"/repro.py\", line 5, in <module>\n    update_in({}, [4, 5], lambda x:1 if x else -1)\n  File \"/src/toolz/dicttoolz/core.py\", line 121, in update_in\n    return assoc(d, keys[0], update_in(d.get(keys[0], None),\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/src/toolz/dicttoolz/core.py\", line 119, in update_in\n    return assoc(d, keys[0], f(d.get(keys[0], None)))\n                               ^^^^^\nAttributeError: 'NoneType' object has no attribute 'get'\n",
+    "exception_type": "AttributeError",
     "traceback_files": [
-      "/repro.py"
+      "/repro.py",
+      "/src/toolz/dicttoolz/core.py",
+      "/src/toolz/dicttoolz/core.py"
     ],
-    "symptom_matched": false,
-    "in_package": false,
+    "symptom_matched": true,
+    "in_package": true,
     "imported_from_checkout": true,
     "commands": [
       "docker image inspect bigbrother-sandbox:0.1",
       "docker image inspect --format '{{.Id}} {{json .Config.Env}}' bigbrother-sandbox:0.1",
       "git -C /Users/vanshajpoonia/.cache/bigbrother/repos/pytoolz__toolz archive --format=tar 891a9462ed87901395031476b5172091b6205edb",
-      "docker volume create bb-74122178a809-deps",
-      "docker run --name bb-74122178a809-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-oq50ocsz/src,target=/src --mount type=volume,source=bb-74122178a809-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-8eccba38555440cc97e3b8845d7749c1; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
-      "docker run --name bb-74122178a809-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-oq50ocsz/src,target=/src,readonly --mount type=volume,source=bb-74122178a809-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-oq50ocsz/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '\"'\"'import contextlib, importlib, io, sys\ntry:\n    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):\n        module = importlib.import_module(sys.argv[1])\nexcept BaseException:\n    sys.exit(0)\npath = getattr(module, \"__file__\", None) or next(iter(getattr(module, \"__path__\", [])), \"\")\nprint(sys.argv[2])\nprint(path)\n'\"'\"' toolz bigbrother-8eccba38555440cc97e3b8845d7749c1 2>/dev/null; exec /deps/venv/bin/python /repro.py'",
-      "docker rm -f bb-74122178a809-install bb-74122178a809-run",
-      "docker volume rm -f bb-74122178a809-deps"
+      "docker volume create bb-4cdd20edcf98-deps",
+      "docker run --name bb-4cdd20edcf98-install -e SETUPTOOLS_SCM_PRETEND_VERSION=0.0.0 --cpus 1 --memory 1g --pids-limit 256 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-0sdjhh9b/src,target=/src --mount type=volume,source=bb-4cdd20edcf98-deps,target=/deps bigbrother-sandbox:0.1 sh -c 'uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src; status=$?; if [ $status -eq 0 ]; then echo bigbrother-0c81284d08574e1d8757824a57db13c0; uv pip freeze --python /deps/venv/bin/python; fi; chmod -R a+rwX /src 2>/dev/null; exit $status'",
+      "docker run --name bb-4cdd20edcf98-run --network none --read-only --tmpfs /tmp:size=64m --cap-drop ALL --security-opt no-new-privileges --user 1000:1000 --pids-limit 128 --memory 1g --cpus 1 --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-0sdjhh9b/src,target=/src,readonly --mount type=volume,source=bb-4cdd20edcf98-deps,target=/deps,readonly --mount type=bind,source=/var/folders/98/746dt60x5_j8w6hy649kh_640000gn/T/bigbrother-0sdjhh9b/repro.py,target=/repro.py,readonly --workdir /tmp bigbrother-sandbox:0.1 sh -c '/deps/venv/bin/python -c '\"'\"'import contextlib, importlib, io, sys\ntry:\n    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):\n        module = importlib.import_module(sys.argv[1])\nexcept BaseException:\n    sys.exit(0)\npath = getattr(module, \"__file__\", None) or next(iter(getattr(module, \"__path__\", [])), \"\")\nprint(sys.argv[2])\nprint(path)\n'\"'\"' toolz bigbrother-0c81284d08574e1d8757824a57db13c0 2>/dev/null; exec /deps/venv/bin/python /repro.py'",
+      "docker rm -f bb-4cdd20edcf98-install bb-4cdd20edcf98-run",
+      "docker volume rm -f bb-4cdd20edcf98-deps"
     ],
-    "image_digest": "sha256:1db2df24fc0a785b7de9c90830a2193446f89dc4cb9a030dace91bb7cb91ad8d",
+    "image_digest": "sha256:a7e232cca38ba46293b4c3b7246485654618c31080fead2e957c07157386e285",
     "python_version": "3.12.16",
     "packages": [
       "-e file:///src"
     ],
-    "duration_s": 5.57
+    "duration_s": 4.97
   },
   "verdict": {
-    "label": "cannot reproduce",
-    "confidence": "low",
+    "label": "confirmed",
+    "confidence": "high",
     "basis": "evidence",
-    "rule": 4,
+    "rule": 1,
     "reasons": [
-      "the repro failed with ImportError outside the package, which isn't the reported symptom",
+      "the repro hit the reported symptom (AttributeError: 'NoneType' object has no attribute 'get') inside the package",
       "checked at 891a9462ed87 origin/master, picked from the issue date"
     ]
   },
@@ -279,25 +281,25 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:42:51.112712Z",
+        "created_at": "2026-10-31T21:03:08.694338Z",
         "message": {
           "role": "assistant",
           "content": "{\n  \"central_claim\": \"The `update_in` function in the package has inconsistent behavior when called with keys that are not present in the dictionary to be updated, specifically failing when more than one missing key is present.\",\n  \"has_steps\": true,\n  \"package\": \"update_in\",\n  \"claimed_version\": null,\n  \"premises\": [\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"update_in\",\n      \"central\": true\n    },\n    {\n      \"kind\": \"symbol\",\n      \"value\": \"assoc\",\n      \"central\": false\n    }\n  ],\n  \"symptom\": {\n    \"kind\": \"exception\",\n    \"quote\": \"AttributeError: 'NoneType' object has no attribute 'get'\",\n    \"exception_type\": \"AttributeError\"\n  }\n}"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 26044284833,
-        "load_duration": 6754833,
+        "total_duration": 20010544541,
+        "load_duration": 1148583,
         "prompt_eval_count": 974,
         "prompt_eval_cached_count": 401,
-        "prompt_eval_duration": 7822063000,
+        "prompt_eval_duration": 4459444000,
         "eval_count": 170,
-        "eval_duration": 18095854000
+        "eval_duration": 15464271000
       },
       "attempts": 1,
       "prompt_tokens": 974,
       "output_tokens": 170,
-      "duration_s": 26.044284833
+      "duration_s": 20.010544541
     },
     {
       "step": "repro",
@@ -350,29 +352,30 @@
       },
       "response": {
         "model": "qwen3:4b",
-        "created_at": "2026-10-31T20:46:19.420833Z",
+        "created_at": "2026-10-31T21:05:52.634712Z",
         "message": {
           "role": "assistant",
           "content": "{\n    \"code\": \"from toolz import update_in, clojure_update_in\\n\\n# let's feed it an empty dictionary\\nupdate_in({}, [4], lambda x:1 if x else -1)\\nupdate_in({}, [4, 5], lambda x:1 if x else -1)\\n\\nclojure_update_in({}, [4], lambda x:1 if x else -1)\\nclojure_update_in({}, [4, 5], lambda x:1 if x else -1)\\nclojure_update_in({}, [4, 5, 9, 10, 11], lambda x:1 if x else -1)\\nclojure_update_in({}, [4, 5, 9, 10, 11], identity)\"\n  }"
         },
         "done": true,
         "done_reason": "stop",
-        "total_duration": 60431718125,
-        "load_duration": 4942083,
+        "total_duration": 18053293917,
+        "load_duration": 4760292,
         "prompt_eval_count": 1989,
-        "prompt_eval_cached_count": 4,
-        "prompt_eval_duration": 25226133000,
+        "prompt_eval_cached_count": 1988,
+        "prompt_eval_duration": 60986000,
         "eval_count": 168,
-        "eval_duration": 21461447000
+        "eval_duration": 17878138000
       },
       "attempts": 2,
       "prompt_tokens": 1989,
       "output_tokens": 168,
-      "duration_s": 60.431718125
+      "duration_s": 18.053293917
     }
   ],
   "notes": [
     "the package is 'toolz' from the repo, not 'update_in' as Qwen read it",
+    "took out toolz.clojure_update_in from Qwen's imports, the package doesn't have them at this revision",
     "Qwen only added imports or dropped lines, so the code that ran is still the reporter's",
     "the reporter's script failed with its own NameError, so Qwen repaired it once and it ran again"
   ]

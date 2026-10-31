@@ -93,5 +93,5 @@ def render(metrics: Metrics, rows: list[tuple[EvalCase, Report | None]]) -> str:
             continue
         v = report.verdict
         mark = "" if v.label == case.expected else " ✗"
-        lines.append(f"| [{case.id}]({case.issue_url}) | {case.expected.value} | {v.label.value}{mark} | {v.rule} | {v.reasons[0]} |")
+        lines.append(f"| [{case.id}]({case.issue_url}) | {case.expected.value} | {v.label.value}{mark} | {v.rule} | {v.reasons[0] if v.reasons else ''} |")
     return "\n".join(lines) + "\n"

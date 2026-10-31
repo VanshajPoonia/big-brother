@@ -40,7 +40,7 @@ Pull requests (stretch): run the PR's changed tests on the base and head commits
 ## Evidence rules
 
 - The symptom is quoted from the report (it must appear in the title or body) and frozen before any script is written.
-- A repaired script is rejected if it raises, asserts, exits, catches exceptions or contains the reported text. If the repair only added imports or dropped lines, the code that ran is still the reporter's, and it's treated that way.
+- A repaired script is rejected if it raises, asserts, exits, catches exceptions or contains the reported text. If the repair only added imports or dropped lines, the code that ran is still the reporter's, and it's treated that way. Names the repair imports that the package doesn't have at that revision (checked with the premise index) are taken out first, with the lines that use them unless the script defines them. The reporter's own imports are never touched.
 - A failure only counts if the traceback has a frame inside the checked-out package.
 - The import check confirms the package comes from the checkout (`__file__` under `/src`).
 - Every premise check returns `present`, `absent`, `unknown` or `error`. An import failure is `unknown`, not `absent`.

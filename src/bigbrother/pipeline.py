@@ -20,7 +20,9 @@ from bigbrother.schema import (
     Extraction,
     Issue,
     Label,
+    Premise,
     Report,
+    Revision,
     RunResult,
 )
 from bigbrother.verdict import decide
@@ -52,6 +54,19 @@ def pick_package(candidates: list[str], guess: str | None, repo: str) -> str | N
         if wanted in candidates:
             return wanted
     return candidates[0] if len(candidates) == 1 else guess
+
+
+def _missing_in(repo_dir: Path, revision: Revision, check_premises: CheckPremises):
+    """True when the source at `revision` definitely lacks module.name. Unsure counts as present."""
+
+    def missing(module: str, name: str) -> bool:
+        try:
+            [result] = check_premises(repo_dir, revision, [Premise(kind="symbol", value=f"{module}.{name}", central=False)])
+        except Exception:  # noqa: BLE001  an unsure check never removes anything
+            return False
+        return result.state == CheckState.ABSENT
+
+    return missing
 
 
 def check(
@@ -132,7 +147,8 @@ def check(
     if model_available and script is not None and broke_on_its_own(run):
         first_error = run.exception_type
         try:
-            fixed, call, repair_notes = repair(script, run, extraction.package, extraction.symptom, model)
+            fixed, call, repair_notes = repair(script, run, extraction.package, extraction.symptom, model,
+                                               missing=_missing_in(repo_dir, revision, check_premises))
             calls.append(call)
             notes += repair_notes
         except ModelError as error:

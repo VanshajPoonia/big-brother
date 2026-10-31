@@ -53,10 +53,9 @@ The maintainers fixed it in 4.4.0.
 
 We hand-checked 11 closed issues from humanize, toolz, arrow, rich and tqdm, reading each thread to the end. The latest run is in [eval/runs/2026-11-01-v2/results.md](eval/runs/2026-11-01-v2/results.md):
 
-- 6 of 11 right, about a minute per issue.
-- Every `confirmed` was a real bug (3 of 3), and it never said `invalid` when it wasn't.
+- 7 of 11 right, about a minute per issue.
+- All 4 real bugs confirmed, and every `confirmed` was a real bug. It never said `invalid` when it wasn't.
 - All 4 real `invalid` reports came back as `cannot reproduce`. They were misunderstandings, an old install and a script named `select.py`, not missing functions.
-- One real bug was missed because the reporter's snippet uses a function they only proposed.
 
 Each mistake is in the table with the reason the tool gave.
 

@@ -154,10 +154,21 @@ def run_eval(args: argparse.Namespace) -> int:
         print(f"bigbrother: {error}", file=sys.stderr)
         return 2
     if args.only:
-        cases = [case for case in cases if case.id in args.only]
+        # Rerun only these, but score everything: the others reuse their saved reports.
+        saved = {}
+        for case in cases:
+            path = args.out / case.id / "report.json"
+            if case.id not in args.only and path.exists():
+                saved[case.id] = Report.model_validate_json(path.read_text(encoding="utf-8"))
+        cases = [case for case in cases if case.id in args.only or case.id in saved]
+    else:
+        saved = {}
 
     reports, seconds = [], []
     for n, case in enumerate(cases, 1):
+        if case.id in saved:
+            reports.append(saved[case.id])
+            continue
         started = time.monotonic()
         print(f"[{n}/{len(cases)}] {case.id} ...", file=sys.stderr, flush=True)
         try:
@@ -178,7 +189,8 @@ def run_eval(args: argparse.Namespace) -> int:
         said = report.verdict.label.value if report else "crashed"
         print(f"    expected {case.expected.value}, said {said} ({seconds[-1]}s)", file=sys.stderr)
 
-    results = render(score(cases, reports, seconds), list(zip(cases, reports)))
+    # With --only the timings would cover just the rerun cases, so leave them out.
+    results = render(score(cases, reports, None if saved else seconds), list(zip(cases, reports)))
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "results.md").write_text(results, encoding="utf-8")
     print(results)
