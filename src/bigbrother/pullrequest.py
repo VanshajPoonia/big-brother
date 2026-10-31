@@ -36,9 +36,9 @@ class Coverage(StrEnum):
 
 
 MEANING = {
-    Coverage.TESTED: "every function this PR changes is named in a test the PR adds or changes",
-    Coverage.PARTLY: "some functions this PR changes are named in a test the PR adds or changes, others aren't",
-    Coverage.NO_TEST: "no test the PR adds or changes names a function it changes",
+    Coverage.TESTED: "every function this PR changes is used in a test the PR adds or changes",
+    Coverage.PARTLY: "some functions this PR changes are used in a test the PR adds or changes, others aren't",
+    Coverage.NO_TEST: "no test the PR adds or changes uses a function it changes",
     Coverage.NO_CODE: "no function in the package changed",
 }
 
@@ -194,8 +194,9 @@ def mentions(repo_dir: Path, sha: str, code_path: str, qualname: str) -> list[Me
     """
     parts = qualname.split(".")
     name, owner = parts[-1], parts[-2] if len(parts) > 1 else None
+    called = False
     if owner and name in CONSTRUCTORS:
-        name, owner = owner, None
+        name, owner, called = owner, None, True
     module = Path(code_path).stem
     same_name = {path for path, _, _ in _grep(repo_dir, sha, f"def {name}") if is_code(path)}
     needs = [owner] if owner else ([module] if len(same_name) > 1 and module != "__init__" else [])
@@ -204,6 +205,8 @@ def mentions(repo_dir: Path, sha: str, code_path: str, qualname: str) -> list[Me
     for path, line, text in _grep(repo_dir, sha, name):
         if not is_test(path) or text.lstrip().startswith(("import ", "from ")):
             continue
+        if called and f"{name}(" not in text:
+            continue  # a constructor has to be called, not just named in a string
         if needs:
             if path not in names_it:
                 names_it[path] = needs[0] in Path(path).stem or bool(_grep(repo_dir, sha, needs[0], path))
