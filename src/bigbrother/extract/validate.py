@@ -4,7 +4,8 @@ from bigbrother.schema import Issue, Symptom
 
 
 def _squash(text: str) -> str:
-    return " ".join(text.split()).lower()
+    # Models copy the words but often drop Markdown marks like `code` and **bold**.
+    return " ".join(text.replace("`", "").replace("*", "").split()).lower()
 
 
 def symptom_is_quoted(issue: Issue, symptom: Symptom) -> bool:
