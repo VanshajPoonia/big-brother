@@ -23,7 +23,7 @@ git add .github/workflows/bigbrother.yml && git commit -m "Add Big Brother" && g
 1. Install Docker and Ollama, then `ollama pull qwen3:4b`.
 2. On GitHub, open your repo's **Settings > Actions > Runners > New self-hosted runner** and follow the steps. Add `--labels bigbrother` to `./config.sh`, then start it with `./run.sh`.
 
-From then on every new issue and pull request gets a comment and a label from `github-actions`, in a minute or two. `bigbrother doctor` on that machine says whether it's ready.
+From then on every new issue and pull request gets a comment and a label from `github-actions`. On our demo runner, a laptop, each job took 16 to 33 seconds, including installing Big Brother. `bigbrother doctor` on that machine says whether it's ready.
 
 **What goes online.** Reading the issue, cloning the repo and posting the comment talk to GitHub, and the install container fetches the package's dependencies. That's all. The model runs on the machine, and the reporter's code and the PR's tests run with `--network none`.
 
@@ -81,7 +81,7 @@ Our demo repo [VanshajPoonia/big-brother-demo](https://github.com/VanshajPoonia/
 | [PR #6](https://github.com/VanshajPoonia/big-brother-demo/pull/6) | A change with no test | no test for this change |
 | [PR #7](https://github.com/VanshajPoonia/big-brother-demo/pull/7) | The same change with a test | tested: the test fails without the change |
 
-Open an issue there and the bot answers. [examples/](examples/) has every report above as Markdown and JSON, with the model's raw answers.
+All 7 comments came from `github-actions` through this workflow, each job in 16 to 33 seconds. While the runner is on, open an issue there and the bot answers. [examples/](examples/) has every report above as Markdown and JSON, with the model's raw answers.
 
 ## For judges
 
