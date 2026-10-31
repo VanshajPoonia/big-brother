@@ -1,0 +1,168 @@
+import pytest
+
+from bigbrother.schema import (
+    Basis,
+    CheckState,
+    Confidence,
+    ExecutionStatus,
+    Excerpt,
+    Extraction,
+    Label,
+    Premise,
+    PremiseResult,
+    ReproScript,
+    Revision,
+    RevisionSource,
+    RunResult,
+    Symptom,
+)
+from bigbrother.verdict import decide
+
+TAG = Revision(sha="a" * 40, source=RevisionSource.TAG, ref="v1.1.0")
+GUESS = Revision(sha="b" * 40, source=RevisionSource.ISSUE_DATE, note="last commit before the issue")
+
+EXTRACTION = Extraction(
+    central_claim="parse_url raises ValueError on long URLs",
+    package="tinylib",
+    claimed_version="1.1.0",
+    symptom=Symptom(kind="exception", quote="ValueError: URL too long", exception_type="ValueError"),
+    has_steps=True,
+)
+OWN_CODE = ReproScript(code="from tinylib import parse_url", origin="reporter")
+GENERATED = ReproScript(code="from tinylib import parse_url", origin="model")
+
+
+def present(value, central=True):
+    return PremiseResult(premise=Premise(kind="symbol", value=value, central=central), state=CheckState.PRESENT,
+                         excerpt=Excerpt(path="tinylib/urls.py", line=4, text=f"def {value.split('.')[-1]}(url):"))
+
+
+def absent(value, central=True, kind="symbol"):
+    return PremiseResult(premise=Premise(kind=kind, value=value, central=central), state=CheckState.ABSENT,
+                         detail="not defined anywhere in tinylib")
+
+
+def ran(**fields):
+    base = {"status": ExecutionStatus.RAN, "exit_code": 0, "imported_from_checkout": True}
+    return RunResult(**(base | fields))
+
+
+CRASHED_AS_REPORTED = {"exit_code": 1, "exception_type": "ValueError", "symptom_matched": True, "in_package": True}
+
+
+def test_rule_1_reproduced_is_confirmed():
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(**CRASHED_AS_REPORTED), TAG)
+    assert (verdict.label, verdict.confidence, verdict.basis, verdict.rule) == (Label.CONFIRMED, Confidence.HIGH, Basis.EVIDENCE, 1)
+    assert "ValueError: URL too long" in verdict.reasons[0]
+
+
+def test_rule_1_wins_over_a_wrong_minor_version_but_lists_it():
+    premises = [present("tinylib.parse_url"), absent("1.1.5", central=False, kind="version")]
+    verdict = decide(EXTRACTION, premises, ran(**CRASHED_AS_REPORTED), TAG)
+    assert verdict.label == Label.CONFIRMED
+    assert any("minor version '1.1.5' is absent" in r for r in verdict.reasons)
+
+
+def test_rule_1_wins_even_over_an_absent_central_premise():
+    # The bug really happens, so a misnamed function in the report doesn't make it invalid.
+    verdict = decide(EXTRACTION, [absent("tinylib.parse_uri")], ran(**CRASHED_AS_REPORTED), TAG)
+    assert verdict.rule == 1
+    assert any("central symbol 'tinylib.parse_uri' is absent" in r for r in verdict.reasons)
+
+
+@pytest.mark.parametrize("run", [
+    ran(exit_code=1, exception_type="ValueError", symptom_matched=True, in_package=False),
+    ran(symptom_matched=True),  # exited cleanly but printed the reported text
+])
+def test_a_symptom_outside_the_package_is_not_confirmed(run):
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], run, TAG)
+    assert (verdict.rule, verdict.confidence) == (4, Confidence.LOW)
+    assert "not from inside the package" in verdict.reasons[0]
+
+
+def test_rule_2_missing_central_function_is_invalid():
+    verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], None, TAG)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.INVALID, Confidence.HIGH, 2)
+    assert "central symbol 'tinylib.parse_url_v2' doesn't exist (not defined anywhere in tinylib)" in verdict.reasons[0]
+    assert any("v1.1.0" in r and "the tag" in r for r in verdict.reasons)
+
+
+def test_rule_2_on_a_date_guess_is_medium():
+    verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], None, GUESS)
+    assert (verdict.label, verdict.confidence) == (Label.INVALID, Confidence.MEDIUM)
+    assert any("guess from the issue date" in r for r in verdict.reasons)
+
+
+def test_rule_2_beats_a_clean_run():
+    verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], ran(), TAG, repro=OWN_CODE)
+    assert verdict.rule == 2
+
+
+def test_an_absent_minor_premise_alone_is_not_invalid():
+    verdict = decide(EXTRACTION, [absent("tinylib.helper", central=False)], ran(), TAG, repro=GENERATED)
+    assert verdict.rule == 3
+
+
+def test_unknown_central_premise_is_not_invalid():
+    unknown = PremiseResult(premise=Premise(kind="symbol", value="otherlib.f", central=True), state=CheckState.UNKNOWN,
+                            detail="package not found")
+    verdict = decide(EXTRACTION, [unknown], None, TAG)
+    assert verdict.rule == 5
+    assert any("is unknown (package not found)" in r for r in verdict.reasons)
+
+
+def test_rule_3_reporters_own_code_running_cleanly_is_high():
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(), TAG, repro=OWN_CODE)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.CANNOT_REPRODUCE, Confidence.HIGH, 3)
+    assert "reporter's own code ran cleanly" in verdict.reasons[0]
+
+
+def test_rule_3_generated_script_is_medium():
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], ran(), TAG, repro=GENERATED)
+    assert (verdict.confidence, verdict.rule) == (Confidence.MEDIUM, 3)
+
+
+def test_rule_3_is_medium_when_the_import_wasnt_checked():
+    verdict = decide(EXTRACTION, [], ran(imported_from_checkout=None), TAG, repro=OWN_CODE)
+    assert verdict.confidence == Confidence.MEDIUM
+    assert any("checked-out package" in r for r in verdict.reasons)
+
+
+def test_rule_4_different_failure_is_low():
+    run = ran(exit_code=1, exception_type="KeyError", in_package=True)
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], run, TAG)
+    assert (verdict.label, verdict.confidence, verdict.rule) == (Label.CANNOT_REPRODUCE, Confidence.LOW, 4)
+    assert "KeyError inside the package" in verdict.reasons[0]
+
+
+@pytest.mark.parametrize("status", [ExecutionStatus.INSTALL_FAILED, ExecutionStatus.TIMEOUT,
+                                    ExecutionStatus.NO_STEPS, ExecutionStatus.SANDBOX_ERROR, ExecutionStatus.NOT_RUN])
+def test_rule_5_blocked_is_a_fallback(status):
+    verdict = decide(EXTRACTION, [present("tinylib.parse_url")], RunResult(status=status), TAG)
+    assert (verdict.label, verdict.confidence, verdict.basis, verdict.rule) == (
+        Label.CANNOT_REPRODUCE, Confidence.LOW, Basis.FALLBACK, 5)
+
+
+def test_rule_5_with_no_steps_says_so():
+    no_steps = EXTRACTION.model_copy(update={"has_steps": False})
+    verdict = decide(no_steps, [], None, TAG)
+    assert verdict.rule == 5
+    assert verdict.reasons[0].startswith("the report has no steps to run")
+
+
+def test_a_run_against_some_other_install_is_blocked():
+    run = ran(**CRASHED_AS_REPORTED, imported_from_checkout=False)
+    verdict = decide(EXTRACTION, [], run, TAG)
+    assert verdict.rule == 5
+    assert "other than the checkout" in verdict.reasons[0]
+
+
+def test_the_blocked_label_is_a_setting():
+    verdict = decide(EXTRACTION, [], None, TAG, blocked_label=Label.INVALID)
+    assert (verdict.label, verdict.basis) == (Label.INVALID, Basis.FALLBACK)
+
+
+def test_no_revision_skips_rule_2():
+    verdict = decide(EXTRACTION, [absent("tinylib.parse_url_v2")], None, None)
+    assert verdict.rule == 5
+    assert "no revision could be picked" in verdict.reasons
