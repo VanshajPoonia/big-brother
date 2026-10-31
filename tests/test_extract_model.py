@@ -4,7 +4,15 @@ from pathlib import Path
 import httpx
 import pytest
 
-from bigbrother.extract.model import ModelError, OllamaModel, ReplayModel, ollama_host
+from bigbrother.extract.model import (
+    DEFAULT_MODEL,
+    ModelError,
+    OllamaModel,
+    OpenAICompatModel,
+    ReplayModel,
+    default_model,
+    ollama_host,
+)
 from bigbrother.schema import Extraction, GeneratedScript
 
 SAVED = Path(__file__).parent / "fixtures" / "model"
@@ -27,7 +35,7 @@ def fake_ollama(*replies, status=200):
     def handler(request):
         sent.append(json.loads(request.content))
         body = {
-            "model": "qwen3:8b",
+            "model": "qwen3:4b",
             "message": {"role": "assistant", "content": next(queue, "")},
             "prompt_eval_count": 10,
             "eval_count": 5,
@@ -36,7 +44,7 @@ def fake_ollama(*replies, status=200):
         return httpx.Response(status, json=body)
 
     client = httpx.Client(base_url="http://ollama.test", transport=httpx.MockTransport(handler))
-    return OllamaModel(name="qwen3:8b", client=client), sent
+    return OllamaModel(name="qwen3:4b", client=client), sent
 
 
 def test_sends_the_schema_and_fixed_sampling():
@@ -76,7 +84,7 @@ def test_replay_parses_saved_calls_like_real_ones():
     parsed, call = model.chat_json("extract", MESSAGES, Extraction)
 
     assert parsed.symptom.exception_type == "ValueError"
-    assert call.model == "qwen3:8b"
+    assert call.model == "qwen3:4b"
 
 
 def test_replay_fails_loudly_without_a_saved_step():
@@ -88,3 +96,42 @@ def test_replay_fails_loudly_without_a_saved_step():
 def test_ollama_host_adds_a_scheme(monkeypatch):
     monkeypatch.setenv("OLLAMA_HOST", "0.0.0.0:11434")
     assert ollama_host() == "http://0.0.0.0:11434"
+
+
+def test_default_is_the_small_model(monkeypatch):
+    monkeypatch.delenv("BIGBROTHER_MODEL", raising=False)
+    assert DEFAULT_MODEL == "qwen3:4b"
+    assert OllamaModel(client=httpx.Client()).name == "qwen3:4b"
+
+
+def test_openai_style_servers_work_too():
+    sent = []
+
+    def handler(request):
+        sent.append((request.url.path, json.loads(request.content)))
+        body = {
+            "model": "qwen3:4b",
+            "choices": [{"message": {"role": "assistant", "content": json.dumps(GOOD)}}],
+            "usage": {"prompt_tokens": 12, "completion_tokens": 7},
+        }
+        return httpx.Response(200, json=body)
+
+    client = httpx.Client(base_url="http://llama.test/v1", transport=httpx.MockTransport(handler))
+    parsed, call = OpenAICompatModel(name="qwen3:4b", client=client).chat_json("extract", MESSAGES, Extraction)
+
+    path, request = sent[0]
+    assert path == "/v1/chat/completions"
+    assert request["response_format"]["json_schema"]["schema"] == Extraction.model_json_schema()
+    assert request["temperature"] == 0
+    assert parsed.package == "tinylib"
+    assert (call.prompt_tokens, call.output_tokens) == (12, 7)
+
+
+def test_default_model_follows_the_environment(monkeypatch):
+    monkeypatch.setenv("BIGBROTHER_API", "openai")
+    assert isinstance(default_model(), OpenAICompatModel)
+    monkeypatch.setenv("BIGBROTHER_API", "ollama")
+    assert isinstance(default_model(), OllamaModel)
+    monkeypatch.setenv("BIGBROTHER_API", "cloud")
+    with pytest.raises(ModelError):
+        default_model()

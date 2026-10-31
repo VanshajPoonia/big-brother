@@ -1,9 +1,14 @@
-"""Talking to Qwen through Ollama, plus a replay model for tests and `--replay`."""
+"""Talking to the model, plus a replay model for tests and `--replay`.
+
+Two ways to reach it: Ollama's own API (the default) or the OpenAI-style chat API that
+llama.cpp, LM Studio, vLLM and Ollama all serve. Either way the model is open-weight.
+"""
 
 from __future__ import annotations
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Protocol, TypeVar
 
@@ -12,7 +17,7 @@ from pydantic import BaseModel, ValidationError
 
 from bigbrother.schema import ModelCall
 
-DEFAULT_MODEL = "qwen3:8b"
+DEFAULT_MODEL = "qwen3:4b"
 MAX_RETRIES = 2
 
 T = TypeVar("T", bound=BaseModel)
@@ -33,33 +38,28 @@ def ollama_host() -> str:
     return host if host.startswith(("http://", "https://")) else f"http://{host}"
 
 
-class OllamaModel:
-    """Asks Ollama for JSON that matches `schema`, and retries with the error if it doesn't."""
+def _post(client: httpx.Client, path: str, request: dict) -> dict:
+    try:
+        response = client.post(path, json=request)
+        response.raise_for_status()
+        return response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise ModelError(f"model request failed: {exc}") from exc
 
-    def __init__(self, name: str | None = None, client: httpx.Client | None = None):
-        self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
-        self.client = client or httpx.Client(base_url=ollama_host(), timeout=300)
+
+class _RetryingModel:
+    """Asks for JSON that matches `schema`, and retries with the error if it doesn't."""
+
+    name: str
+
+    def _send(self, messages: list[dict], schema: type[BaseModel]) -> tuple[dict, dict, str, dict]:
+        raise NotImplementedError
 
     def chat_json(self, step: str, messages: list[dict], schema: type[T]) -> tuple[T, ModelCall]:
         messages = list(messages)
         last_error = ""
         for attempt in range(1, MAX_RETRIES + 2):
-            request = {
-                "model": self.name,
-                "messages": messages,
-                "format": schema.model_json_schema(),
-                "stream": False,
-                "think": False,
-                "options": {"temperature": 0, "seed": 42},
-            }
-            try:
-                response = self.client.post("/api/chat", json=request)
-                response.raise_for_status()
-            except httpx.HTTPError as exc:
-                raise ModelError(f"Ollama request failed: {exc}") from exc
-
-            data = response.json()
-            content = data.get("message", {}).get("content", "")
+            request, data, content, usage = self._send(messages, schema)
             try:
                 parsed = schema.model_validate_json(content)
             except ValidationError as exc:
@@ -69,24 +69,86 @@ class OllamaModel:
                     {"role": "user", "content": f"That JSON doesn't match the schema:\n{exc}\nReply again with valid JSON only."},
                 ]
                 continue
-
             call = ModelCall(
                 step=step,
                 model=data.get("model", self.name),
                 request=request,
                 response=data,
                 attempts=attempt,
-                prompt_tokens=data.get("prompt_eval_count"),
-                output_tokens=data.get("eval_count"),
-                duration_s=data["total_duration"] / 1e9 if "total_duration" in data else None,
+                **usage,
             )
             return parsed, call
 
         raise ModelError(f"no valid {schema.__name__} after {MAX_RETRIES + 1} attempts: {last_error}")
 
 
+class OllamaModel(_RetryingModel):
+    def __init__(self, name: str | None = None, client: httpx.Client | None = None):
+        self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
+        self.client = client or httpx.Client(base_url=ollama_host(), timeout=300)
+
+    def _send(self, messages, schema):
+        request = {
+            "model": self.name,
+            "messages": messages,
+            "format": schema.model_json_schema(),
+            "stream": False,
+            "think": False,
+            "options": {"temperature": 0, "seed": 42},
+        }
+        data = _post(self.client, "/api/chat", request)
+        content = data.get("message", {}).get("content", "")
+        usage = {
+            "prompt_tokens": data.get("prompt_eval_count"),
+            "output_tokens": data.get("eval_count"),
+            "duration_s": data["total_duration"] / 1e9 if "total_duration" in data else None,
+        }
+        return request, data, content, usage
+
+
+class OpenAICompatModel(_RetryingModel):
+    """Any server with an OpenAI-style /chat/completions endpoint, running an open-weight model."""
+
+    def __init__(self, name: str | None = None, base_url: str | None = None, client: httpx.Client | None = None):
+        self.name = name or os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
+        base_url = base_url or os.environ.get("BIGBROTHER_BASE_URL", f"{ollama_host()}/v1")
+        self.client = client or httpx.Client(base_url=base_url, timeout=300)
+
+    def _send(self, messages, schema):
+        request = {
+            "model": self.name,
+            "messages": messages,
+            "temperature": 0,
+            "seed": 42,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"name": schema.__name__, "schema": schema.model_json_schema(), "strict": True},
+            },
+        }
+        started = time.monotonic()
+        data = _post(self.client, "/chat/completions", request)
+        choices = data.get("choices") or [{}]
+        content = choices[0].get("message", {}).get("content") or ""
+        usage = data.get("usage") or {}
+        return request, data, content, {
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "output_tokens": usage.get("completion_tokens"),
+            "duration_s": round(time.monotonic() - started, 3),
+        }
+
+
+def default_model() -> Model:
+    """Pick the client from BIGBROTHER_API: `ollama` (default) or `openai` for the OpenAI-style API."""
+    api = os.environ.get("BIGBROTHER_API", "ollama")
+    if api == "ollama":
+        return OllamaModel()
+    if api == "openai":
+        return OpenAICompatModel()
+    raise ModelError(f"unknown BIGBROTHER_API {api!r}, use ollama or openai")
+
+
 class ReplayModel:
-    """Replays saved model calls instead of asking Ollama. Parses them exactly like real ones."""
+    """Replays saved model calls instead of asking a server. Parses them exactly like real ones."""
 
     def __init__(self, calls: list[ModelCall]):
         self.calls = {call.step: call for call in calls}
@@ -101,6 +163,8 @@ class ReplayModel:
             raise ModelError(f"no saved response for step {step!r}")
         call = self.calls[step]
         content = call.response.get("message", {}).get("content", "")
+        if not content and call.response.get("choices"):
+            content = call.response["choices"][0].get("message", {}).get("content") or ""
         try:
             return schema.model_validate_json(content), call
         except ValidationError as exc:
