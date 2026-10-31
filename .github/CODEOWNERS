@@ -1,0 +1,13 @@
+# Shared rules and Lane 1 (core) need Vanshaj's review.
+# Add lane owners here once lanes are assigned.
+/HACKATHON.md                  @VanshajPoonia
+/AGENTS.md                     @VanshajPoonia
+/CLAUDE.md                     @VanshajPoonia
+/docs/                         @VanshajPoonia
+/.github/                      @VanshajPoonia
+/pyproject.toml                @VanshajPoonia
+/src/bigbrother/schema.py      @VanshajPoonia
+/src/bigbrother/ingest/        @VanshajPoonia
+/src/bigbrother/extract/       @VanshajPoonia
+/src/bigbrother/verdict.py     @VanshajPoonia
+/src/bigbrother/cli.py         @VanshajPoonia

@@ -12,9 +12,9 @@ Daggers
 ## Problem statement
 Problem 2: Evidence-Based Open Source Issue and Pull Request Triage
 
-We are building **Big Brother**, which watches incoming issues and pull requests, breaks them into individual technical claims, and checks each claim against the real code: static checks, git history, and reproduction inside an isolated sandbox. Maintainers get an evidence-backed verdict for every claim, and Big Brother says "unverified" whenever the evidence is not strong enough.
+We are building **Big Brother**. It reads a GitHub issue, pulls out the technical claims, checks them against the real code (version and symbol checks, then a reproduction in an isolated Docker sandbox) and labels the issue `confirmed`, `cannot reproduce` or `invalid`, with the evidence and a confidence level.
 
 ## Models we use and why
-- Qwen3 8B (`qwen3:8b`, Apache-2.0), run locally with Ollama: reads issue and PR text, splits it into checkable claims, and drives our own agent harness through tool calls (reading code, searching git history, writing reproduction scripts for the sandbox). It has reliable tool calling and is small enough to run on a 16 GB laptop next to Docker.
+- Qwen3 8B (`qwen3:8b`, Apache-2.0), run locally with Ollama: reads the issue title and body and pulls out the central claim, its premises and the exact symptom, then writes a short reproduction script when the reporter didn't include one. It is good at code and structured JSON, and small enough to run on a 16 GB laptop next to Docker.
 
-The model never decides a verdict on its own. Verdicts come from deterministic rules over the evidence it gathers.
+The model never picks the label. Fixed rules do, based on what the checks and the sandbox run show.
