@@ -51,10 +51,10 @@ def test_install_command_has_network_limits_and_only_src_and_deps():
         "type=volume,source=bb-1-deps,target=/deps",
     ]
     assert "-e" not in command and "--env" not in command and "--env-file" not in command
-    assert command[-1] == (
-        "uv venv /deps/venv --python /usr/local/bin/python3 && "
-        "uv pip install --python /deps/venv/bin/python -e /src"
-    )
+    assert command[-3:-1] == ["sh", "-c"]
+    assert "uv venv /deps/venv --python /usr/local/bin/python3" in command[-1]
+    assert "uv pip install --python /deps/venv/bin/python -e /src" in command[-1]
+    assert command[-1].endswith("; status=$?; chmod -R a+rwX /src 2>/dev/null; exit $status")
 
 
 def test_run_command_is_offline_read_only_and_limited():

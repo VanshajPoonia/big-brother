@@ -28,7 +28,13 @@ INSTALL_TIMEOUT = 300
 RUN_TIMEOUT = 60
 BUILD_TIMEOUT = 600
 
-INSTALL_SCRIPT = "uv venv /deps/venv --python /usr/local/bin/python3 && uv pip install --python /deps/venv/bin/python -e /src"
+# The build writes files like *.egg-info into /src as uid 1000. The chmod lets
+# the host user delete them afterwards, so it runs even when the install fails.
+INSTALL_SCRIPT = (
+    "uv venv /deps/venv --python /usr/local/bin/python3"
+    " && uv pip install --python /deps/venv/bin/python -e /src;"
+    " status=$?; chmod -R a+rwX /src 2>/dev/null; exit $status"
+)
 
 FRAME = re.compile(r'^\s+File "(?P<file>[^"]+)", line \d+')
 EXCEPTION = re.compile(r"^(?P<type>[A-Za-z_][\w.]*)(:|$)")
@@ -172,7 +178,8 @@ def reproduce(
     run_id = uuid.uuid4().hex[:12]
     names = {"install": f"bb-{run_id}-install", "run": f"bb-{run_id}-run", "volume": f"bb-{run_id}-deps"}
 
-    with tempfile.TemporaryDirectory(prefix="bigbrother-") as tmp:
+    # A killed install can leave files the host user can't delete. Don't fail the result over that.
+    with tempfile.TemporaryDirectory(prefix="bigbrother-", ignore_cleanup_errors=True) as tmp:
         try:
             result = _reproduce(Path(tmp), Path(repo_dir), revision, script, symptom, package, names, commands)
         except (SandboxError, subprocess.TimeoutExpired, OSError, tarfile.TarError) as error:
