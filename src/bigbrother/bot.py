@@ -9,12 +9,11 @@ make the tool comment on a project that didn't ask for it.
 from __future__ import annotations
 
 import os
-import subprocess
 from urllib.parse import quote
 
 import httpx
 
-from bigbrother.ingest import API, _headers
+from bigbrother.ingest import API, _headers, _token
 
 DEMO_REPOS = frozenset({"vanshajpoonia/big-brother-demo"})
 MARKER = "<!-- bigbrother -->"
@@ -27,7 +26,6 @@ LABEL_COLORS = {
     "partly tested": "fbca04",
     "no test for this change": "d93f0b",
     "no function changed": "c5def5",
-    "tests fail": "b60205",
 }
 
 
@@ -48,12 +46,7 @@ def require_demo(repo: str) -> None:
 
 def token() -> str:
     """GITHUB_TOKEN, or the token `gh auth login` saved."""
-    found = os.environ.get("GITHUB_TOKEN", "")
-    if not found:
-        try:
-            found = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=10).stdout.strip()
-        except (OSError, subprocess.TimeoutExpired):
-            found = ""
+    found = _token()
     if not found:
         raise ValueError("posting needs GITHUB_TOKEN in the environment, or `gh auth login`")
     return found

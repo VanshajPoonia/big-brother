@@ -6,6 +6,7 @@ are never fetched, so the verdict can't be swayed by what other people said.
 
 from __future__ import annotations
 
+import functools
 import os
 import re
 import subprocess
@@ -32,16 +33,42 @@ def parse_issue_url(url: str) -> tuple[str, int]:
     return f"{match['owner']}/{match['name']}", int(match["number"])
 
 
+RATE_LIMITED = ("GitHub's limit for requests ran out. Without a token it's 60 an hour: "
+                "run `gh auth login` or set GITHUB_TOKEN for 5,000")
+
+
+@functools.cache
+def _gh_token() -> str | None:
+    """The token `gh auth login` saved, asked for once per run."""
+    try:
+        found = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True, timeout=10).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return found or None
+
+
+def _token() -> str | None:
+    """GITHUB_TOKEN, or the token `gh auth login` saved, or None."""
+    return os.environ.get("GITHUB_TOKEN") or _gh_token()
+
+
 def _headers() -> dict[str, str]:
     headers = {
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "User-Agent": "bigbrother",
     }
-    token = os.environ.get("GITHUB_TOKEN")
+    token = _token()
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
+
+
+def raise_for_github(response: httpx.Response) -> None:
+    """raise_for_status, but a spent rate limit says what to do about it."""
+    if response.status_code in (403, 429) and response.headers.get("x-ratelimit-remaining") == "0":
+        raise ValueError(RATE_LIMITED)
+    response.raise_for_status()
 
 
 def fetch_issue(url: str, client: httpx.Client | None = None) -> Issue:
@@ -52,7 +79,7 @@ def fetch_issue(url: str, client: httpx.Client | None = None) -> Issue:
         client = httpx.Client(timeout=30)
     try:
         response = client.get(f"{API}/repos/{repo}/issues/{number}", headers=_headers())
-        response.raise_for_status()
+        raise_for_github(response)
         data = response.json()
     finally:
         if owned:

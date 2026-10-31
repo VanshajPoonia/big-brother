@@ -129,8 +129,13 @@ def summary(report: Report, heading: bool = True) -> str:
 def _load_issue(source: str):
     from bigbrother.ingest import fetch_issue, load_issue_file
 
+    import httpx
+
     if source.startswith(("http://", "https://")):
-        return fetch_issue(source)
+        try:
+            return fetch_issue(source)
+        except httpx.HTTPError as error:
+            raise ValueError(f"GitHub didn't answer: {error}") from error
     return load_issue_file(source)
 
 

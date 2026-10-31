@@ -21,7 +21,7 @@ import httpx
 from pydantic import BaseModel, Field
 
 from bigbrother import __version__
-from bigbrother.ingest import API, _headers
+from bigbrother.ingest import API, _headers, raise_for_github
 from bigbrother.redact import redact
 from bigbrother.schema import ExecutionStatus, RunResult
 
@@ -38,7 +38,6 @@ class Coverage(StrEnum):
     PARTLY = "partly tested"
     NO_TEST = "no test for this change"
     NO_CODE = "no function changed"
-    TESTS_FAIL = "tests fail"
 
 
 MEANING = {
@@ -46,7 +45,6 @@ MEANING = {
     Coverage.PARTLY: "some functions this PR changes are used in a test the PR adds or changes, others aren't",
     Coverage.NO_TEST: "no test the PR adds or changes uses a function it changes",
     Coverage.NO_CODE: "no function in the package changed",
-    Coverage.TESTS_FAIL: "the PR's own tests fail at its head",
 }
 
 
@@ -106,7 +104,7 @@ def fetch_pr(url: str, client: httpx.Client | None = None) -> PullRequest:
     client = client or httpx.Client(timeout=30)
     try:
         response = client.get(f"{API}/repos/{repo}/pulls/{number}", headers=_headers())
-        response.raise_for_status()
+        raise_for_github(response)
         data = response.json()
     finally:
         if owned:
@@ -353,8 +351,9 @@ def check_pr(pr: PullRequest, repo_dir: Path, run_tests=None) -> PrReport:
         if head_run.status != ExecutionStatus.RAN:
             reasons.insert(0, f"couldn't run {shown}: {_outcome(head_run)}")
         elif not _passed(head_run):
-            label = Coverage.TESTS_FAIL
-            reasons.insert(0, f"{shown} {fail} at the PR's head ({_outcome(head_run)})")
+            # Often the sandbox, not the PR: a newer dependency than the project's own CI pins.
+            reasons.insert(0, f"{shown} {fail} at the PR's head in the sandbox ({_outcome(head_run)}). That can be the PR, "
+                              f"or a dependency version different from the project's own CI, so it doesn't decide the label")
         elif _failed(base_run):
             label = Coverage.TESTED  # running them beats reading names
             reasons.insert(0, f"{shown} {fail} without the change ({_outcome(base_run)}) and {passes} with it "

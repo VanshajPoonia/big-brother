@@ -220,10 +220,12 @@ def test_passing_both_ways_is_said_plainly(repo):
     assert "passes with and without the change" in report.reasons[0]
 
 
-def test_tests_failing_at_the_head_win_and_the_base_isnt_run(repo):
+def test_tests_failing_at_the_head_are_reported_but_dont_decide_the_label(repo):
     tests = FakeTests(head=ran(1, "1 failed, 1 passed"), base=None)
     report = check_pr(pr_with_a_test(repo), repo[0], run_tests=tests)
-    assert report.label == Coverage.TESTS_FAIL and len(tests.calls) == 1 and report.base_run is None
+    assert report.label == Coverage.TESTED  # from the names: a failure here is often the sandbox's dependencies
+    assert len(tests.calls) == 1 and report.base_run is None
+    assert "fails at the PR's head in the sandbox (1 failed, 1 passed)" in report.reasons[0]
 
 
 def test_no_test_files_means_nothing_runs(repo):
