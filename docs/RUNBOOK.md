@@ -4,6 +4,31 @@ The one guide for tonight. If it disagrees with another doc, this one wins. The 
 
 Link for the group chat: https://github.com/VanshajPoonia/big-brother/blob/main/docs/RUNBOOK.md
 
+## Judging, 8:30 AM: run the bot
+
+**Before the pitch, on the demo Mac:**
+1. Docker is running, and `ollama list` shows `qwen3:4b`.
+2. The runner is on: `cd ~/actions-runner/big-brother-demo && ./run.sh`, and it says "Listening for Jobs". Leave that terminal open. On GitHub, the demo repo's **Settings > Actions > Runners** shows `bigbrother-mac` as Idle.
+3. `bigbrother doctor` says layer 3.
+
+**The live demo**, on https://github.com/VanshajPoonia/big-brother-demo:
+1. **New issue**, paste the long URL bug from issue #1. In about half a minute `github-actions` comments "✓ Reproduced on v1.1.0" with the evidence. The **Actions** tab shows the job running on the Mac.
+2. Walk through #2 to #5 and PRs #6 and #7, which already have their comments.
+3. Comment `/bigbrother check` on any of them: the bot updates its comment. `/bigbrother help` lists the commands.
+
+**If the runner is off,** jobs wait in the queue and run as soon as `./run.sh` starts. If the demo fails, show the comments already on the demo repo, `examples/`, or `bigbrother check ... --replay examples/humanize-57/report.json`.
+
+**Any of us may be asked to explain any part.** Each person knows their part, and everyone reads `src/bigbrother/pipeline.py`, which ties it together:
+
+| Person | Explains | Files |
+| --- | --- | --- |
+| Somya | Which release the reporter used, and whether the functions and versions they name exist | `ingest/`, `premises/` |
+| Abhijeet | The Docker sandbox: install with network, run offline and locked down, and running a PR's tests before and after | `sandbox/`, `docker/` |
+| Radhika | The eval: the 11 hand-checked issues, the injection and repeat runs, the 40 PRs | `eval/`, `evaluate.py` |
+| Vanshaj | The model's job, the label rules, the bot and the PR check | `extract/`, `verdict.py`, `bot.py`, `pullrequest.py`, `workflow.yml` |
+
+**Numbers to know**, all saved under `eval/`: 9 of 11 real issues right, every label from evidence, 0 called invalid wrongly. 11 of 11 unchanged with a prompt injection, 11 of 11 the same on a second run. On 40 recent merged PRs in humanize and Rich, 8 PRs' own tests fail without the change and pass with it. The bot answers in 16 to 33 seconds on a laptop, with no API and no server.
+
 ## Words used here
 
 - **Branch:** your own copy of the code to work on. `main` is the shared one, and nobody pushes to it directly.
@@ -26,7 +51,7 @@ Link for the group chat: https://github.com/VanshajPoonia/big-brother/blob/main/
 | Somya | Fetch issues, clone repos, check that functions and versions exist | #3 | Phase 1, then phase 2 |
 | Abhijeet | The Docker sandbox that runs the reproduction | #4 | Phase 1, then phase 2 |
 | Radhika | Eval cases, pitch, Q&A, blog, approving Vanshaj's PRs | #6 | All night |
-| Vanshaj | Core: model calls, label rules, the `check` command. Proof: report and metrics | #2, #5 | Paused until about 2 AM |
+| Vanshaj | Core: model calls, label rules, the `check` command, the bot and the PR check. Proof: report and metrics | #2, #5 | Back from 2 AM, merged in #23 |
 
 Somya and Abhijeet review and merge each other's PRs. Radhika's eval PR is reviewed by Somya or Abhijeet.
 
