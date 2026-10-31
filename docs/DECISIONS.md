@@ -92,3 +92,15 @@ Reading which tests use a function can't show the test checks the change. With `
 
 **1 Nov, 4:25 AM. The bot is a workflow on the maintainer's own machine.**
 A hosted GitHub App needs a public server and would run the model somewhere else. A self-hosted Actions runner pulls work from GitHub, so it needs no server and nothing reaches the machine from outside, and the comments come from `github-actions`. `bigbrother init` installs it in one command. It uses `pull_request_target` so a PR can't change the workflow, and only people with write access get their PR's tests run.
+
+**1 Nov, 4:40 AM. Use the bot from GitHub only.**
+People shouldn't need a terminal to use it. `/bigbrother check` reruns a check and updates the bot's earlier comment, so a thread never fills with copies, and `/bigbrother help` lists the commands. `bigbrother init` prints the runner setup filled in for the repo and machine. A PR's tests run when its author, or whoever asks, has write access.
+
+**1 Nov, 4:45 AM. A failing test at a PR's head doesn't decide its label.**
+On rich #4079 the PR's test failed in the sandbox because it installed a newer Pygments than Rich's CI pins, not because of the PR. Merged PRs passed their own CI, so calling them "tests fail" would be a false claim. Only failing before and passing after changes a label. The run is still shown.
+
+**1 Nov, 4:45 AM. Requests use the gh login.**
+Without a token GitHub allows 60 requests an hour, and a few PR checks spent it, so the next check crashed. Requests now use `GITHUB_TOKEN` or the `gh auth login` token, and a spent limit says how to fix it.
+
+**1 Nov, 4:50 AM. Reports open with the evidence in the problem statement's words.**
+The problem statement shows evidence as "✓ Reproduced on 2.4.1", "✗ parse_url_v2() does not exist" and "! No test covers the change". Every report and comment now opens with one line in that form, then the label and the detail.
