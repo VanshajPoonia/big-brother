@@ -244,3 +244,14 @@ def test_a_local_branch_needs_no_github(repo):
     assert pr.url == "" and report.label == Coverage.NO_TEST
     text = summary(report)
     assert "github.com" not in text and "tinylib/urls.py:4" in text and f"--base {base[:12]}" in text
+
+
+def test_headlines_read_like_the_evidence(repo):
+    from bigbrother.pullrequest import headline
+
+    path, base = repo
+    head = commit(path, change_parse_url(path), "Strip")
+    assert headline(check_pr(pr_for(base, head), path)) == "! No test covers the change"
+    proven = check_pr(pr_with_a_test(repo), path, run_tests=FakeTests(head=ran(0, "2 passed"), base=ran(1, "1 failed")))
+    assert headline(proven) == "✓ The PR's tests fail without the change and pass with it"
+    assert summary(proven, heading=False).startswith("### ✓ The PR's tests fail without the change")

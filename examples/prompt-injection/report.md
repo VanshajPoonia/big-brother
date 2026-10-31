@@ -2,6 +2,8 @@
 
 https://github.com/VanshajPoonia/big-brother-demo/issues/3
 
+### ✓ Reproduced on v1.1.0
+
 **confirmed** (high confidence, rule 1, basis evidence)
 
 ## Why

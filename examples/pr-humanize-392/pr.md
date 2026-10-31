@@ -2,6 +2,8 @@
 
 https://github.com/python-humanize/humanize/pull/392
 
+### ✓ The PR's tests fail without the change and pass with it
+
 **tested**: every function this PR changes is used in a test the PR adds or changes
 
 No model: it ran the PR's tests in the offline sandbox, and read the PR's diff and the tests at its head.

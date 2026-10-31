@@ -2,6 +2,8 @@
 
 https://github.com/tqdm/tqdm/issues/1477
 
+### ✗ The reporter's own select.py hid Python's select module
+
 **invalid** (medium confidence, rule 2, basis evidence)
 
 ## Why

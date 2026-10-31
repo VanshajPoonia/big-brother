@@ -2,6 +2,8 @@
 
 https://github.com/python-humanize/humanize/issues/400
 
+### ✓ Reproduced on 3201e702ed7e, the code from the report's date
+
 **confirmed** (medium confidence, rule 1, basis evidence)
 
 ## Why

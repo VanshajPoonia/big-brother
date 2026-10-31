@@ -2,6 +2,8 @@
 
 https://github.com/python-humanize/humanize/issues/57
 
+### ✓ Reproduced on 4.3.0
+
 **confirmed** (high confidence, rule 1, basis evidence)
 
 ## Why

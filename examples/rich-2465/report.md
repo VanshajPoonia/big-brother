@@ -2,6 +2,8 @@
 
 https://github.com/Textualize/rich/issues/2465
 
+### ✗ save_svg exists since v12.1.0: the reporter's install is older
+
 **invalid** (medium confidence, rule 2, basis evidence)
 
 ## Why

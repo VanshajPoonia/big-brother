@@ -2,6 +2,8 @@
 
 https://github.com/arrow-py/arrow/issues/1154
 
+### ! Not reproduced on 1.2.3
+
 **cannot reproduce** (high confidence, rule 3, basis evidence)
 
 ## Why

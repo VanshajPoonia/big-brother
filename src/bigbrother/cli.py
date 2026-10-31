@@ -87,11 +87,39 @@ def _tail(text: str, lines: int = 12) -> str:
     return "\n".join(text.strip().splitlines()[-lines:])
 
 
+def headline(report: Report) -> str:
+    """The evidence in one line, like "✓ Reproduced on 4.3.0" or "✗ parse_url_v2() does not exist"."""
+    from pathlib import PurePath
+
+    v = report.verdict
+    at, r = "", report.revision
+    if r is not None:
+        # A release reads "on 4.3.0". A date guess names the commit, since its ref is just the branch searched.
+        at = f" on {r.ref}" if r.ref and r.source.value != "issue_date" else f" on {r.sha[:12]}, the code from the report's date"
+    if v.label == Label.CONFIRMED:
+        return f"✓ Reproduced{at}"
+    if v.label == Label.INVALID and v.rule == 2:
+        absent = [r.premise for r in report.premises if r.premise.central and r.state.value == "absent"]
+        if absent:
+            name = absent[0].value.rsplit(".", 1)[-1] + "()" if absent[0].kind == "symbol" else f"version {absent[0].value}"
+            return f"✗ {name} does not exist{at.replace(' on ', ' at ', 1)}"
+        if report.shadowing:
+            return f"✗ The reporter's own {PurePath(report.shadowing.path).name} hid Python's {report.shadowing.module} module"
+        if report.old_install:
+            o = report.old_install
+            return f"✗ {o.name} exists since {o.added_in}: the reporter's install is older"
+    if v.basis.value == "fallback":
+        return "! Couldn't test the claim, so this label is a fallback, not evidence"
+    return f"! Not reproduced{at}"
+
+
 def summary(report: Report, heading: bool = True) -> str:
     """Plain Markdown a maintainer can read, as report.md or as the bot's comment (no heading)."""
     v = report.verdict
     lines = [f"# {report.issue.title}", "", f"{report.issue.url}", ""] if heading else []
     lines += [
+        f"### {headline(report)}",
+        "",
         f"**{v.label.value}** ({v.confidence.value} confidence, rule {v.rule}, basis {v.basis.value})",
         "",
         "## Why",

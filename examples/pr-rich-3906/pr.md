@@ -2,6 +2,8 @@
 
 https://github.com/Textualize/rich/pull/3906
 
+### ! No test covers the change
+
 **no test for this change**: no test the PR adds or changes uses a function it changes
 
 No model: this comes from the PR's diff and the tests at its head.

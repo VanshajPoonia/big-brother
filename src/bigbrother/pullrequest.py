@@ -373,6 +373,18 @@ def _tail(text: str, lines: int = 15) -> str:
     return "\n".join(text.strip().splitlines()[-lines:])
 
 
+def headline(report: PrReport) -> str:
+    """The evidence in one line, like "! No test covers the change"."""
+    if report.label == Coverage.TESTED and _failed(report.base_run) and _passed(report.head_run):
+        return "✓ The PR's tests fail without the change and pass with it"
+    return {
+        Coverage.TESTED: "✓ A test in this PR covers each change",
+        Coverage.PARTLY: "! Tests cover only part of the change",
+        Coverage.NO_TEST: "! No test covers the change",
+        Coverage.NO_CODE: "No function in the package changed",
+    }[report.label]
+
+
 def summary(report: PrReport, heading: bool = True) -> str:
     pr = report.pr
 
@@ -383,7 +395,7 @@ def summary(report: PrReport, heading: bool = True) -> str:
 
     lines = [f"# {pr.title}", "", pr.url, ""] if heading and pr.url else [f"# {pr.title}", ""] if heading else []
     how = "it ran the PR's tests in the offline sandbox, and read" if report.tests_run else "this comes from"
-    lines += [f"**{report.label.value}**: {MEANING[report.label]}", "",
+    lines += [f"### {headline(report)}", "", f"**{report.label.value}**: {MEANING[report.label]}", "",
               f"No model: {how} the PR's diff and the tests at its head.", "",
               "## Why", *[f"- {reason}" for reason in report.reasons]]
     if report.functions:

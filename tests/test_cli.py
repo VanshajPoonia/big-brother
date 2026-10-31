@@ -157,3 +157,14 @@ def test_init_prints_runner_steps_for_this_repo_and_machine():
     assert "--url https://github.com/someone/their-lib --labels bigbrother" in steps
     assert "repos/someone/their-lib/actions/runners/registration-token" in steps
     assert "actions-runner-linux-x64-" in runner_steps(None, "Linux", "x86_64")
+
+
+def test_issue_headlines_read_like_the_evidence():
+    from bigbrother.cli import headline
+
+    for folder, line in [("humanize-57", "✓ Reproduced on 4.3.0"), ("fake-rce-report", "✗ parse_url_v2() does not exist at v1.1.0"),
+                         ("tqdm-1477", "✗ The reporter's own select.py hid Python's select module"),
+                         ("rich-2465", "✗ save_svg exists since v12.1.0: the reporter's install is older"),
+                         ("arrow-1154", "! Not reproduced on 1.2.3")]:
+        report = Report.model_validate_json((Path("examples") / folder / "report.json").read_text())
+        assert headline(report) == line
