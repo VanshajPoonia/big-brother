@@ -45,6 +45,12 @@ def build_parser() -> argparse.ArgumentParser:
     pr.add_argument("--out", type=Path, default=Path("bigbrother-out"), help="folder for pr.json and pr.md")
     pr.add_argument("--comment", action="store_true", help="post the report on the PR and label it (only on our demo repo)")
 
+    command = commands.add_parser("command", help="answer a /bigbrother comment on an issue or PR (the bot's workflow calls this)")
+    command.add_argument("url", help="the issue or pull request the comment is on")
+    command.add_argument("--text", required=True, help="the comment's text")
+    command.add_argument("--run-tests", action="store_true", help="run a PR's tests (only when the person asking has write access)")
+    command.add_argument("--out", type=Path, default=Path("bigbrother-out"), help="folder for the report")
+
     init = commands.add_parser("init", help="install the bot in a repo: a GitHub Actions workflow for your own machine")
     init.add_argument("path", nargs="?", type=Path, default=Path("."), help="the repo to install it in (default .)")
     init.add_argument("--force", action="store_true", help="replace an existing workflow file")
@@ -256,7 +262,78 @@ def run_pr(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_command(args: argparse.Namespace) -> int:
+    from bigbrother.bot import parse_command, post_help, require_demo
+    from bigbrother.ingest import ISSUE_URL
+
+    asked = parse_command(args.text)
+    if asked is None:
+        print("bigbrother: that comment isn't a /bigbrother command, nothing to do", file=sys.stderr)
+        return 0
+    match = ISSUE_URL.match(args.url.strip())
+    if not match:
+        print(f"bigbrother: {args.url!r} isn't an issue or pull request URL", file=sys.stderr)
+        return 2
+    repo, number = f"{match['owner']}/{match['name']}", int(match["number"])
+    try:
+        require_demo(repo)
+    except ValueError as error:
+        print(f"bigbrother: not commenting: {error}", file=sys.stderr)
+        return 2
+    if asked == "help":
+        return _post_help(repo, number)
+    if match["kind"] != "issues":
+        return run_pr(argparse.Namespace(url=args.url, base=None, head="HEAD", repo=None, out=args.out, comment=True,
+                                         run_tests=args.run_tests))
+    return run_check(argparse.Namespace(issue=args.url, repo=None, out=args.out, json=False, replay=None, comment=True,
+                                        blocked_label=Label.CANNOT_REPRODUCE.value))
+
+
+def _post_help(repo: str, number: int) -> int:
+    import httpx
+
+    from bigbrother.bot import post_help
+
+    try:
+        link = post_help(repo, number)
+    except (ValueError, httpx.HTTPError) as error:
+        print(f"bigbrother: couldn't comment: {error}", file=sys.stderr)
+        return 2
+    print(f"bigbrother: posted the help on {link}", file=sys.stderr)
+    return 0
+
+
+def runner_steps(repo: str | None, system: str, machine: str) -> str:
+    """The shell commands that add a self-hosted runner for `repo` on this kind of machine."""
+    os_name = {"Darwin": "osx", "Linux": "linux", "Windows": "win"}.get(system, "linux")
+    arch = "arm64" if machine.lower() in ("arm64", "aarch64") else "x64"
+    where = repo or "OWNER/REPO"
+    folder = f"~/actions-runner/{where.split('/')[-1]}"
+    return "\n".join([
+        f"mkdir -p {folder} && cd {folder}",
+        "V=$(gh api repos/actions/runner/releases/latest --jq '.tag_name | ltrimstr(\"v\")')",
+        f'curl -sSL "https://github.com/actions/runner/releases/download/v$V/actions-runner-{os_name}-{arch}-$V.tar.gz" | tar xz',
+        f"./config.sh --unattended --url https://github.com/{where} --labels bigbrother "
+        f"--token $(gh api -X POST repos/{where}/actions/runners/registration-token --jq .token)",
+        "./run.sh",
+    ])
+
+
+def _github_repo(path: Path) -> str | None:
+    """owner/name from the clone's origin remote, if it's on GitHub."""
+    import re
+
+    try:
+        url = subprocess.run(["git", "-C", str(path), "remote", "get-url", "origin"], capture_output=True, text=True,
+                             timeout=10).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return None
+    match = re.search(r"github\.com[:/]([\w.-]+/[\w.-]+?)(?:\.git)?$", url)
+    return match[1] if match else None
+
+
 def run_init(args: argparse.Namespace) -> int:
+    import platform
     from importlib.resources import files
 
     target = args.path / ".github" / "workflows" / "bigbrother.yml"
@@ -268,17 +345,22 @@ def run_init(args: argparse.Namespace) -> int:
         return 2
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(files("bigbrother").joinpath("workflow.yml").read_text(encoding="utf-8"), encoding="utf-8")
-    print(f"""wrote {target}
+    repo = _github_repo(args.path)
+    print(f"""Wrote {target}
 
-The bot runs on your own machine as a GitHub Actions runner, so there's no server and the model
-never leaves it. On that machine:
+1. Push it:
+   git add {target.relative_to(args.path)} && git commit -m "Add Big Brother" && git push
 
-  1. Install Docker and Ollama, then: ollama pull qwen3:4b
-  2. Add a self-hosted runner with the label "bigbrother": on GitHub, Settings > Actions >
-     Runners > New self-hosted runner, follow the steps, and add --labels bigbrother to config.sh
-  3. Commit and push {target.relative_to(args.path)}
+2. On the machine that will run the bot (it needs Docker, Ollama and `ollama pull qwen3:4b`),
+   add it as a runner with these commands, and leave the last one running:
 
-Every new issue and pull request then gets a comment and a label from github-actions.""")
+{runner_steps(repo, platform.system(), platform.machine())}
+
+Then every new issue and pull request{f" in {repo}" if repo else ""} gets a comment from github-actions.
+Anyone can comment /bigbrother check to run it again, or /bigbrother help.
+
+This machine right now:""")
+    run_doctor()
     return 0
 
 
@@ -433,6 +515,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_watch(args)
     if args.command == "init":
         return run_init(args)
+    if args.command == "command":
+        return run_command(args)
     if args.command == "doctor":
         return run_doctor()
     return 0

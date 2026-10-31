@@ -9,21 +9,29 @@ A local open-weight model, Qwen3 4B through Ollama, only reads the issue into a 
 
 Built at Hacktoberfest Hack Day Sonipat by Team Daggers.
 
-## Install the bot on your repo
+## Using the bot
+
+Everything happens on GitHub. Nobody installs anything to use it.
+
+| You | The bot |
+| --- | --- |
+| Open an issue | Comments `confirmed`, `cannot reproduce` or `invalid` with the evidence, and adds the label |
+| Open or update a pull request | Comments whether the PR's tests check the change, and adds the label |
+| Comment `/bigbrother check` | Checks it again and updates its comment |
+| Comment `/bigbrother help` | Lists what it can do |
+| **Actions > Big Brother > Run workflow**, paste a URL | Checks any issue or PR in the repo |
+
+## Install it on your repo
+
+Three steps, on the machine that will run the bot. It needs Docker, Ollama and the GitHub CLI.
 
 ```
 pip install "bigbrother @ git+https://github.com/VanshajPoonia/big-brother"
-cd your-repo
-bigbrother init
-git add .github/workflows/bigbrother.yml && git commit -m "Add Big Brother" && git push
+ollama pull qwen3:4b
+cd your-repo && bigbrother init
 ```
 
-`bigbrother init` writes one GitHub Actions workflow. It runs on a machine you choose, as a self-hosted runner, so you host no server and nothing reaches your machine from outside: the runner asks GitHub for work. On that machine:
-
-1. Install Docker and Ollama, then `ollama pull qwen3:4b`.
-2. On GitHub, open your repo's **Settings > Actions > Runners > New self-hosted runner** and follow the steps. Add `--labels bigbrother` to `./config.sh`, then start it with `./run.sh`.
-
-From then on every new issue and pull request gets a comment and a label from `github-actions`. On our demo runner, a laptop, each job took 16 to 33 seconds, including installing Big Brother. `bigbrother doctor` on that machine says whether it's ready.
+`bigbrother init` writes one GitHub Actions workflow, prints the exact commands to push it and to add this machine as a self-hosted runner for your repo, and checks that Docker and the model are ready. Run those commands and leave the last one, `./run.sh`, running. That machine does all the work: GitHub needs no server from you, nothing reaches the machine from outside because the runner asks GitHub for work, and the model never leaves it. On our demo runner, a laptop, each job took 16 to 33 seconds, including installing Big Brother.
 
 **What goes online.** Reading the issue, cloning the repo and posting the comment talk to GitHub, and the install container fetches the package's dependencies. That's all. The model runs on the machine, and the reporter's code and the PR's tests run with `--network none`.
 

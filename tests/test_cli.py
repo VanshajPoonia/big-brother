@@ -139,7 +139,7 @@ def test_init_writes_the_bot_workflow_once(tmp_path, capsys):
     assert main(["init", str(tmp_path)]) == 0
     workflow = (tmp_path / ".github/workflows/bigbrother.yml").read_text()
     assert "runs-on: [self-hosted, bigbrother]" in workflow and "pull_request_target" in workflow
-    assert "self-hosted runner" in capsys.readouterr().out
+    assert "add it as a runner" in capsys.readouterr().out
     assert main(["init", str(tmp_path)]) == 2  # never overwrites without --force
     assert main(["init", str(tmp_path), "--force"]) == 0
 
@@ -147,3 +147,13 @@ def test_init_writes_the_bot_workflow_once(tmp_path, capsys):
 def test_pr_needs_a_url_or_a_base(capsys):
     assert main(["pr"]) == 2
     assert "--base" in capsys.readouterr().err
+
+
+def test_init_prints_runner_steps_for_this_repo_and_machine():
+    from bigbrother.cli import runner_steps
+
+    steps = runner_steps("someone/their-lib", "Darwin", "arm64")
+    assert "actions-runner-osx-arm64-$V.tar.gz" in steps
+    assert "--url https://github.com/someone/their-lib --labels bigbrother" in steps
+    assert "repos/someone/their-lib/actions/runners/registration-token" in steps
+    assert "actions-runner-linux-x64-" in runner_steps(None, "Linux", "x86_64")

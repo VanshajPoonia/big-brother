@@ -2,11 +2,14 @@
 # Installed by `bigbrother init`. It runs on your own machine as a self-hosted runner with the
 # label "bigbrother", so there's no server to host and the model (qwen3:4b in Ollama) never
 # leaves that machine. The reporter's code runs in Docker with no network.
+# Anyone can comment `/bigbrother check` to run it again, or `/bigbrother help`.
 name: Big Brother
 
 on:
   issues:
     types: [opened, reopened]
+  issue_comment:
+    types: [created]
   # The workflow always comes from your default branch, so a pull request can't change what
   # runs on your machine. The PR's code only ever runs inside the offline sandbox.
   pull_request_target:
@@ -24,10 +27,12 @@ permissions:
 
 concurrency:
   group: bigbrother-${{ github.event.issue.number || github.event.pull_request.number || inputs.url }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   check:
+    # A comment only starts a run when it's a /bigbrother command.
+    if: github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/bigbrother')
     runs-on: [self-hosted, bigbrother]
     timeout-minutes: 20
     steps:
@@ -50,17 +55,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           URL: ${{ inputs.url || github.event.issue.html_url || github.event.pull_request.html_url }}
-          # Only people with write access get their PR's tests run. Everyone else gets the read-only check.
-          TRUSTED: ${{ contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) || github.event_name == 'workflow_dispatch' }}
+          COMMENT: ${{ github.event.comment.body }}
+          # A PR's tests only run when its author, or whoever comments /bigbrother check, has write
+          # access. Everyone else gets the read-only check.
+          TRUSTED: ${{ contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association || github.event.pull_request.author_association) || github.event_name == 'workflow_dispatch' }}
         run: |
           bigbrother="$RUNNER_TOOL_CACHE/bigbrother/bin/bigbrother"
           out="$RUNNER_TEMP/bigbrother"
-          case "$URL" in
-            */pull/*)
-              if [ "$TRUSTED" = "true" ]; then run_tests=--run-tests; else run_tests=; fi
-              "$bigbrother" pr "$URL" $run_tests --comment --out "$out"
-              cat "$out/pr.md" >> "$GITHUB_STEP_SUMMARY" ;;
-            *)
-              "$bigbrother" check "$URL" --comment --out "$out"
-              cat "$out/report.md" >> "$GITHUB_STEP_SUMMARY" ;;
-          esac
+          if [ "$TRUSTED" = "true" ]; then run_tests=--run-tests; else run_tests=; fi
+          if [ "$GITHUB_EVENT_NAME" = "issue_comment" ]; then
+            "$bigbrother" command "$URL" --text "$COMMENT" $run_tests --out "$out"
+          else
+            case "$URL" in
+              */pull/*) "$bigbrother" pr "$URL" $run_tests --comment --out "$out" ;;
+              *) "$bigbrother" check "$URL" --comment --out "$out" ;;
+            esac
+          fi
+          cat "$out"/*.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
