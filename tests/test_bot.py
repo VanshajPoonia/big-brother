@@ -59,3 +59,24 @@ def test_check_comment_refuses_a_real_project_before_doing_anything(capsys):
 
     assert main(["check", "tests/fixtures/issues/real_bug.json", "--comment"]) == 2
     assert "isn't our demo repo" in capsys.readouterr().err
+
+
+def test_watch_routes_issues_and_prs_once_each_and_always_comments(monkeypatch):
+    from bigbrother import cli
+
+    calls = []
+    monkeypatch.setattr(bot, "pending", lambda repo: [("issue", 2, "https://github.com/VanshajPoonia/big-brother-demo/issues/2"),
+                                                      ("pull", 3, "https://github.com/VanshajPoonia/big-brother-demo/pull/3")])
+    monkeypatch.setattr(cli, "run_check", lambda args: calls.append(("check", args.issue, args.comment)) or 0)
+    monkeypatch.setattr(cli, "run_pr", lambda args: calls.append(("pr", args.url, args.comment)) or 0)
+
+    assert cli.main(["watch", "--once"]) == 0
+    assert calls == [("check", "https://github.com/VanshajPoonia/big-brother-demo/issues/2", True),
+                     ("pr", "https://github.com/VanshajPoonia/big-brother-demo/pull/3", True)]
+
+
+def test_watch_refuses_a_real_project(capsys):
+    from bigbrother.cli import main
+
+    assert main(["watch", "--repo", "Textualize/rich", "--once"]) == 2
+    assert "isn't our demo repo" in capsys.readouterr().err
