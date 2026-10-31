@@ -7,7 +7,8 @@ from bigbrother import __version__, sandbox
 from bigbrother.cli import main
 from bigbrother.extract import model as model_module
 from bigbrother.extract.model import ReplayModel
-from bigbrother.schema import ExecutionStatus, ModelCall, Report, RunResult
+from bigbrother.ingest import load_issue_file
+from bigbrother.schema import Basis, Confidence, ExecutionStatus, Label, ModelCall, Report, RunResult, Verdict
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -62,3 +63,45 @@ def test_json_flag_prints_the_report(tmp_path, tinylib_repo, monkeypatch, capsys
     assert printed["verdict"]["label"] == "invalid"
     assert printed["verdict"]["basis"] == "fallback"
     assert printed["model_available"] is False
+
+
+def test_replay_uses_the_saved_answers_and_never_the_model(tmp_path, tinylib_repo, monkeypatch, capsys):
+    def no_model():
+        raise AssertionError("--replay must not ask for a model")
+
+    monkeypatch.setattr(model_module, "default_model", no_model)
+    crashed = RunResult(status=ExecutionStatus.RAN, exit_code=1, exception_type="ValueError", symptom_matched=True,
+                        in_package=True, imported_from_checkout=True)
+    monkeypatch.setattr(sandbox, "reproduce", lambda *args: crashed)
+    saved_call = ModelCall.model_validate_json((FIXTURES / "model" / "real_bug_extract.json").read_text())
+    earlier = tmp_path / "earlier.json"
+    issue = FIXTURES / "issues" / "real_bug.json"
+    verdict = Verdict(label=Label.CONFIRMED, confidence=Confidence.HIGH, basis=Basis.EVIDENCE, rule=1)
+    earlier.write_text(Report(tool_version="0", model_available=True, issue=load_issue_file(issue), verdict=verdict,
+                              model_calls=[saved_call]).model_dump_json())
+
+    code = main(["check", str(issue), "--repo", str(tinylib_repo.path), "--out", str(tmp_path / "out"), "--replay", str(earlier)])
+
+    assert code == 0
+    report = Report.model_validate_json((tmp_path / "out" / "report.json").read_text())
+    assert report.verdict.label == "confirmed"
+    assert report.model_calls == [saved_call]
+
+
+def test_replay_of_a_missing_file_is_bad_input(tmp_path, capsys):
+    issue = FIXTURES / "issues" / "real_bug.json"
+    assert main(["check", str(issue), "--repo", str(tmp_path), "--replay", str(tmp_path / "nope.json")]) == 2
+
+
+def test_doctor_names_a_layer_and_refuses_a_remote_model(monkeypatch, capsys):
+    monkeypatch.setenv("OLLAMA_HOST", "http://192.168.1.20:11434")
+    assert main(["doctor"]) == 0
+    out = capsys.readouterr().out
+    assert "must run on this machine" in out
+    assert "\nlayer " in out
+
+
+def test_doctor_says_when_ollama_isnt_answering(monkeypatch, capsys):
+    monkeypatch.setenv("OLLAMA_HOST", "http://127.0.0.1:1")
+    main(["doctor"])
+    assert "Ollama isn't answering" in capsys.readouterr().out

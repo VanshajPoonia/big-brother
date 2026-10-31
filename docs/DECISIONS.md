@@ -55,3 +55,12 @@ Reports store raw facts and derive the label, `--blocked-label` changes the bloc
 
 **31 Oct, 10:30 PM. The model only runs on this machine.**
 The organizers allow only offline models. The code refuses any model host that isn't localhost, ignores proxy settings and doesn't follow redirects, so a typo or a stray setting can't send issue text out. GitHub, git and pip still use the network. The repro run doesn't.
+
+**1 Nov, 2:00 AM. One repair round for broken reporter scripts.**
+Two of 11 real reporters forgot an import, so their code died with NameError before reaching the package. When a script fails with its own NameError or ImportError outside the package, Qwen fixes it once and it runs again. The fix is rejected if it raises, asserts, exits, catches exceptions or contains the reported text.
+
+**1 Nov, 2:20 AM. Tried and dropped: the model tagging feature requests.**
+All 4 real invalid reports in the eval were misunderstandings or feature requests, not missing functions. We had Qwen tag each report as a bug, question or feature request, with a rule turning a non-bug into invalid. On the 11 real cases Qwen called every report a bug, including a plain feature request, so the rule never fired. It only added model influence and a risk of false invalids, so it's gone. Invalid still means "something the report relies on doesn't exist".
+
+**1 Nov, 2:20 AM. The package name comes from the repo.**
+On toolz #99 Qwen named the package `update_in`, a function. That broke the repair and would have hidden a real crash, because "inside the package" is checked against that name. Now the importable packages are read from the checkout, and Qwen's name is only kept if the repo has it.

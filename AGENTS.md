@@ -4,7 +4,7 @@ Rules for everyone working on Big Brother, people and coding agents alike. Read 
 
 ## What we're building
 
-A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, with evidence. Qwen3 4B (via Ollama) extracts the claims and, when needed, writes a repro script. Labels come from fixed rules over version and symbol checks and a sandboxed run. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+A tool that labels a GitHub issue `confirmed`, `cannot reproduce` or `invalid`, with evidence. Qwen3 4B (via Ollama) extracts the claims and repairs a broken reporter snippet once. Labels come from fixed rules over version and symbol checks and a sandboxed run. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Hard rules
 

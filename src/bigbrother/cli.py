@@ -22,12 +22,16 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--repo", type=Path, help="a local clone of the issue's repo (default: clone it into the cache)")
     check.add_argument("--out", type=Path, default=Path("bigbrother-out"), help="folder for report.json and report.md")
     check.add_argument("--json", action="store_true", help="print the report as JSON instead of a summary")
+    check.add_argument("--replay", type=Path, metavar="REPORT_JSON",
+                       help="reuse the model answers saved in an earlier report.json, so no model is needed")
     check.add_argument(
         "--blocked-label",
         choices=[label.value for label in Label],
         default=Label.CANNOT_REPRODUCE.value,
         help="label to use when nothing could run (rule 5)",
     )
+
+    commands.add_parser("doctor", help="say what this machine can run: tests, Docker runs, the model")
 
     evaluate = commands.add_parser("eval", help="score the tool on hand-checked issues")
     evaluate.add_argument("cases", nargs="?", type=Path, default=Path("eval/cases.yaml"))
@@ -93,8 +97,13 @@ def run_check(args: argparse.Namespace) -> int:
         print(f"bigbrother: can't read the issue: {error}", file=sys.stderr)
         return 2
     try:
-        model = default_model()
-    except ModelError as error:
+        if args.replay is not None:
+            from bigbrother.extract.model import ReplayModel
+
+            model = ReplayModel(Report.model_validate_json(args.replay.read_text(encoding="utf-8")).model_calls)
+        else:
+            model = default_model()
+    except (OSError, ValueError, ModelError) as error:
         print(f"bigbrother: {error}", file=sys.stderr)
         return 2
 
@@ -176,10 +185,55 @@ def run_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_doctor() -> int:
+    import shutil
+    import subprocess
+
+    import httpx
+
+    from bigbrother.extract.model import DEFAULT_MODEL, ModelError, local_only, ollama_host
+
+    def ok(command: list[str]) -> bool:
+        try:
+            return subprocess.run(command, capture_output=True, timeout=30).returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+
+    have_git = shutil.which("git") is not None
+    have_docker = ok(["docker", "info"])
+    wanted = os.environ.get("BIGBROTHER_MODEL", DEFAULT_MODEL)
+    model_line = f"model: {wanted} not found at {ollama_host()}, run `ollama pull {wanted}`"
+    have_model = False
+    try:
+        with httpx.Client(base_url=local_only(ollama_host()), timeout=5, trust_env=False) as client:
+            names = {m["name"] for m in client.get("/api/tags").json().get("models", [])}
+        have_model = wanted in names or f"{wanted}:latest" in names
+        if have_model:
+            model_line = f"model: {wanted} ready at {ollama_host()}"
+    except ModelError as error:
+        model_line = f"model: {error}"
+    except (httpx.HTTPError, ValueError):
+        model_line = f"model: Ollama isn't answering at {ollama_host()}"
+
+    print(f"python: {sys.version.split()[0]}")
+    print(f"git: {'yes' if have_git else 'missing, needed to read repos'}")
+    print("docker: " + ("running" if have_docker else "not running, needed to run the reporter's code"))
+    print(model_line)
+    layer = 0 if not have_git else 1 + have_docker + (have_docker and have_model)
+    what = {0: "read the saved reports in examples/ and eval/runs/",
+            1: "tests, premise checks and --replay, without running anything",
+            2: "--replay with real Docker runs",
+            3: "everything: bigbrother check and bigbrother eval"}
+    print(f"layer {layer}: {what[layer]}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "check":
         return run_check(args)
     if args.command == "eval":
         return run_eval(args)
+    if args.command == "doctor":
+        return run_doctor()
     return 0
