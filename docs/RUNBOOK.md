@@ -10,13 +10,17 @@ Link for the group chat: https://github.com/VanshajPoonia/big-brother/blob/main/
 1. Docker is running, and `ollama list` shows `qwen3:4b`.
 2. The runner is on: `cd ~/actions-runner/big-brother-demo && ./run.sh`, and it says "Listening for Jobs". Leave that terminal open. On GitHub, the demo repo's **Settings > Actions > Runners** shows `bigbrother-mac` as Idle.
 3. `bigbrother doctor` says layer 3.
+4. Keep the Mac awake: run `caffeinate -dims` in another terminal and leave it running. A sleeping Mac is the same as an off one.
+5. About 5 minutes before you present, comment `/bigbrother check` on any demo issue. Ollama unloads the model when it sits idle, and the first job after that takes about a minute. Warmed up, it answers in about half a minute.
 
 **The live demo**, on https://github.com/VanshajPoonia/big-brother-demo:
 1. **New issue**, paste the long URL bug from issue #1. In about half a minute `github-actions` comments "✓ Reproduced on v1.1.0" with the evidence. The **Actions** tab shows the job running on the Mac.
 2. Walk through #2 to #5 and PRs #6 and #7, which already have their comments.
 3. Comment `/bigbrother check` on any of them: the bot updates its comment. `/bigbrother help` lists the commands.
 
-**If the runner is off,** jobs wait in the queue and run as soon as `./run.sh` starts. If the demo fails, show the comments already on the demo repo, `examples/`, or `bigbrother check ... --replay examples/humanize-57/report.json`.
+**If the Mac sleeps or turns off,** nothing is lost. Each job waits in GitHub's queue as "waiting for a runner", and the issue has no bot comment yet. Start `./run.sh` again and the waiting jobs run in order. A job that waits over 24 hours is cancelled, and a job cut off mid-check shows as failed: comment `/bigbrother check` to run either again. To have the runner start by itself at boot, run `./svc.sh install` and then `./svc.sh start` in the runner folder.
+
+**If someone spams `/bigbrother`,** the Mac is fine and the queue gets slower. The runner does one job at a time, each issue or PR keeps at most one job running and one waiting, so repeats collapse to two, and every check is capped at 1 CPU, 1 GB, 128 processes and 60 seconds. If the demo fails, show the comments already on the demo repo, `examples/`, or `bigbrother check ... --replay examples/humanize-57/report.json`.
 
 **Any of us may be asked to explain any part.** Each person knows their part, and everyone reads `src/bigbrother/pipeline.py`, which ties it together:
 
