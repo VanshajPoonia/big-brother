@@ -90,6 +90,15 @@ def build_tinylib(root: Path) -> FixtureRepo:
 
 
 @pytest.fixture(autouse=True)
+def no_git_signing(monkeypatch):
+    """A global tag.gpgSign makes a plain `git tag` ask for a message, so test repos never sign."""
+    for i, key in enumerate(["commit.gpgSign", "tag.gpgSign"]):
+        monkeypatch.setenv(f"GIT_CONFIG_KEY_{i}", key)
+        monkeypatch.setenv(f"GIT_CONFIG_VALUE_{i}", "false")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "2")
+
+
+@pytest.fixture(autouse=True)
 def no_gh_login(monkeypatch):
     """Tests never read the real `gh` login: no token of the person running them reaches a test."""
     monkeypatch.setattr("bigbrother.ingest._gh_token", lambda: None)
