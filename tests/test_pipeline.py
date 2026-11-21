@@ -5,7 +5,7 @@ import pytest
 from bigbrother.extract.model import ModelError, ReplayModel
 from bigbrother.pipeline import check, pick_package, repo_packages
 from bigbrother.premises import check_premises, resolve_revision
-from bigbrother.schema import ExecutionStatus, Label, ModelCall, RunResult
+from bigbrother.schema import CheckState, ExecutionStatus, Label, ModelCall, RunResult
 
 EXTRACT = {
     "real_bug": {"central_claim": "parse_url raises ValueError on long URLs", "package": "tinylib", "claimed_version": "1.1.0",
@@ -157,6 +157,44 @@ def test_a_wrong_package_from_qwen_is_replaced_and_noted(load_issue, tinylib_rep
     assert report.extraction.package == "tinylib"
     assert sandbox.calls[0][3] == "tinylib"
     assert "the package is 'tinylib' from the repo, not 'parse_url' as Qwen read it" in report.notes
+
+
+# Qwen's form parses fine but names the wrong function: a real one from the same module.
+def qwen_names(name, symbol):
+    form = dict(EXTRACT[name], premises=[{"kind": "symbol", "value": symbol, "central": True}])
+    return ReplayModel([ModelCall(step="extract", model="qwen3:4b", request={}, response={"message": {"content": json.dumps(form)}})])
+
+
+def test_a_real_function_the_report_never_names_is_dropped(load_issue, tinylib_repo):
+    sandbox = FakeSandbox(CRASHED)
+    report = check(load_issue("real_bug"), tinylib_repo.path, qwen_names("real_bug", "tinylib.parse_query"),
+                   reproduce=sandbox, **LANES)
+
+    assert report.premises == []
+    assert "dropped symbol 'tinylib.parse_query', the report doesn't mention it" in report.notes
+    assert sandbox.calls[0][1] == "reporter"
+    assert (report.verdict.label, report.verdict.rule) == (Label.CONFIRMED, 1)
+
+
+def test_a_wrong_function_the_report_also_names_doesnt_pick_the_label(load_issue, tinylib_repo):
+    issue = load_issue("real_bug")
+    issue = issue.model_copy(update={"body": issue.body + "\n\nparse_query is fine with the same URL."})
+    report = check(issue, tinylib_repo.path, qwen_names("real_bug", "tinylib.parse_query"),
+                   reproduce=FakeSandbox(CRASHED), **LANES)
+
+    assert [(r.premise.value, r.state) for r in report.premises] == [("tinylib.parse_query", CheckState.PRESENT)]
+    assert (report.verdict.label, report.verdict.rule) == (Label.CONFIRMED, 1)
+
+
+def test_a_wrong_function_can_hide_a_missing_one_but_adds_no_label(load_issue, tinylib_repo):
+    # Known limit: with parse_url_v2 in the form this is invalid. With parse_url it falls back.
+    issue = load_issue("missing_function")
+    issue = issue.model_copy(update={"body": issue.body + " parse_url doesn't do this."})
+    report = check(issue, tinylib_repo.path, qwen_names("missing_function", "tinylib.parse_url"),
+                   reproduce=FakeSandbox(CRASHED), **LANES)
+
+    assert [(r.premise.value, r.state) for r in report.premises] == [("tinylib.parse_url", CheckState.PRESENT)]
+    assert (report.verdict.label, report.verdict.rule, report.verdict.basis) == (Label.CANNOT_REPRODUCE, 5, "fallback")
 
 
 def test_a_repair_importing_something_tinylib_lacks_is_cleaned_before_the_rerun(load_issue, tinylib_repo):
